@@ -1,0 +1,19 @@
+{
+  "name": "shared",
+  "version": "1.0.0",
+  "description": "shared code for PhD experiments",
+  "main": "client.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@bitbucket.org/efficacystudy/shared.git"
+  },
+  "author": "Frank Carver",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://bitbucket.org/efficacystudy/shared/issues"
+  },
+  "homepage": "https://bitbucket.org/efficacystudy/shared#readme"
+}

@@ -1,0 +1,24 @@
+{
+  "name": "logger",
+  "version": "1.0.0",
+  "description": "data logger for PhD experiments",
+  "main": "logger.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@bitbucket.org/efficacystudy/logger.git"
+  },
+  "author": "Frank Carver",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://bitbucket.org/efficacystudy/logger/issues"
+  },
+  "homepage": "https://bitbucket.org/efficacystudy/logger#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "mysql": "^2.18.1",
+    "client": "git+https://efficacy@bitbucket.org/efficacystudy/shared.git"
+  }
+}

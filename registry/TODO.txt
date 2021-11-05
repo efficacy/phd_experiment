@@ -1,0 +1,20 @@
+Current
+-------
+
+Sooner
+------
+
+Later
+-----
+
+Maybe
+-----
+
+Never
+-----
+
+Done
+----
+2021-09-04 Started JS version of central server
+2021-09-05 Mostly working replacement
+2021-09-06 Clean "each" to only pass the lease
