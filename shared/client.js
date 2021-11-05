@@ -1,12 +1,14 @@
 const net = require('net');
 const https = require('https')
 const http = require('http')
+const {Resolver} = require('./util')
 
 const Client = class {
     constructor(beacon, myport) {
         this.beacon = beacon
         this.myport = myport
         this.config = {}
+        this.resolver = new Resolver(this.lookup)
         const client = net.connect({
             port: 80,
             host: this.beacon
@@ -64,7 +66,7 @@ const Client = class {
         if (role in this.config.addresses) {
             return cb(null, this.config.addresses[role])
         }
-        // TODO if not found locally, ask the CS
+        // TODO if not found locally, ask the registry
     }
 }
 

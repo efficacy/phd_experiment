@@ -1,0 +1,14 @@
+{
+  "name": "tests",
+  "version": "1.0.0",
+  "description": "test code for exoeriment infrastraucture",
+  "main": "test_all.js",
+  "scripts": {
+    "test": "node test_all.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "tape": "^5.3.1"
+  }
+}
