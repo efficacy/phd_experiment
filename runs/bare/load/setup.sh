@@ -1,0 +1,1 @@
+echo 'pre-test setup script'
