@@ -1,6 +1,4 @@
 const net = require('net');
-const https = require('https')
-const http = require('http')
 const {Resolver} = require('./util')
 
 const Client = class {
@@ -20,43 +18,35 @@ const Client = class {
         return `${this.ip}:${this.myport}`
     }
     register(host, role, keepalive) {
-        let protocol = https
-        if (!host.startsWith('http')) {
-            host = 'https://' + host
-        }
-        if (host.startsWith('http://')) {
-            protocol = http
-        }
-        if (!host.endsWith('/')) {
-            host = host + '/'
-        }
-        console.log(`register ${role} with host ${host} keepalive=${keepalive} my ip=${this.ip} my port=${this.myport}`)
-        protocol.get(`${host}register?role=${role}&address=${this.ip}:${this.myport}`, (res) => {
-            let expiry = parseInt(res.headers['x-lease-expiry'])
-            if (keepalive) {
-                let text = ''
-                res.on('data', d => {
-                    text += d
-                })
-                res.on('end', d => {
-                    try {
-                        let config = JSON.parse(text)
-                        if (config) {
-                            host = config.server
-                            this.config = config
+        this.resolver.resolve(host, (err, host, protocol) => {
+            if (err) throw err
+            console.log(`register ${role} with host ${host} keepalive=${keepalive} my ip=${this.ip} my port=${this.myport}`)
+            protocol.get(`${host}register?role=${role}&address=${this.ip}:${this.myport}`, (res) => {
+                let expiry = parseInt(res.headers['x-lease-expiry'])
+                if (keepalive) {
+                    let text = ''
+                    res.on('data', d => {
+                        text += d
+                    })
+                    res.on('end', d => {
+                        try {
+                            let config = JSON.parse(text)
+                            if (config) {
+                                host = config.server
+                                this.config = config
+                            }
+                            let now = Date.now()
+                            let lease = expiry - now - 10;
+                            console.log(`got lease of ${lease} ms for host ${host}`)
+                            setTimeout(() => {
+                                return this.register(host, role, keepalive)
+                            }, lease)
+                        } catch(err) {
+                            console.log(`error: ${err}\ntext: ${text}`)
                         }
-                        let now = Date.now()
-                        let lease = expiry - now - 10;
-                        console.log(`got lease of ${lease} ms for host ${host}`)
-                        setTimeout(() => {
-                            return this.register(host, role, keepalive)
-                        }, lease)
-                    } catch(err) {
-                        console.log(`error: ${err}\ntext: ${text}`)
-                    }
-                })
-
-            }
+                    })
+                }
+            })
         })
     }
     lookup(role, cb) {
