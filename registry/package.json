@@ -1,7 +1,6 @@
 {
   "dependencies": {
-    "express": "^4.17.1",
-    "client": "git+https://efficacy@bitbucket.org/efficacystudy/shared.git"
+    "express": "^4.17.1"
   },
   "scripts": {
     "start": "node server.js"

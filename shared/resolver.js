@@ -36,6 +36,4 @@ class Resolver {
     }
 }
 
-module.exports = {
-    Resolver : Resolver
-}
+module.exports = Resolver

@@ -1,5 +1,5 @@
 const net = require('net');
-const {Resolver} = require('./util')
+const Resolver = require('./resolver')
 
 const Client = class {
     constructor(beacon, myport) {

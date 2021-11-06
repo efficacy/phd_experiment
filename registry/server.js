@@ -1,7 +1,7 @@
 const express = require('express')
 const fs = require('fs')
 const Store = require('./store/files')
-const Client = require('client')
+const {Client} = require('../shared')
 
 const app = express()
 
@@ -247,9 +247,9 @@ refreshVersions( (err, version) => {
   app.listen(port, () => {
     if (primary) {
       client.register(primary, 'MIRROR', true)
-      console.log(`Central Server Mirror listening on port ${port}`)
+      console.log(`Registry Mirror listening on port ${port}`)
     } else {
-      console.log(`Central Server Primary listening on port ${port}`)
+      console.log(`Registry Primary listening on port ${port}`)
     }
   })
 })
