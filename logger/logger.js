@@ -1,6 +1,6 @@
 const express = require('express')
-// const store = require('./logstore-memory')
-const store = require('./logstore-mysql')
+const memstore = require('./logstore-memory')
+const sqlstore = require('./logstore-mysql')
 const {Client} = require('../shared')
 
 const app = express()
@@ -16,6 +16,7 @@ if (args.length > 1) {
 }
 port = port || normalizePort(process.env.PORT || '3002');
 
+let store = process.env.STORE == 'memory' ? memstore : sqlstore;
 let client = new Client('192.168.1.1', port)
 
 function normalizePort(val) {
