@@ -1,7 +1,7 @@
 const express = require('express')
 // const store = require('./logstore-memory')
 const store = require('./logstore-mysql')
-const Client = require('client')
+const {Client} = require('../shared')
 
 const app = express()
 

@@ -18,7 +18,6 @@
   "homepage": "https://bitbucket.org/efficacystudy/logger#readme",
   "dependencies": {
     "express": "^4.17.1",
-    "mysql": "^2.18.1",
-    "client": "git+https://efficacy@bitbucket.org/efficacystudy/shared.git"
+    "mysql": "^2.18.1"
   }
 }
