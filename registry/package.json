@@ -6,9 +6,9 @@
   "scripts": {
     "start": "node server.js"
   },
-  "name": "cs-node",
+  "name": "registry",
   "version": "1.0.0",
-  "description": "central experiment server",
+  "description": "central experiment registry to connect other services",
   "main": "server.js",
   "devDependencies": {},
   "repository": {
