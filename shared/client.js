@@ -21,6 +21,7 @@ const Client = class {
         this.resolver.resolve(host, (err, host, protocol) => {
             if (err) throw err
             console.log(`register ${role} with host ${host} keepalive=${keepalive} my ip=${this.ip} my port=${this.myport}`)
+            this.resolved = { host: host, protocol: protocol }
             protocol.get(`${host}register?role=${role}&address=${this.ip}:${this.myport}`, (res) => {
                 let expiry = parseInt(res.headers['x-lease-expiry'])
                 if (keepalive) {
@@ -56,7 +57,18 @@ const Client = class {
         if (role in this.config.addresses) {
             return cb(null, this.config.addresses[role])
         }
-        // TODO if not found locally, ask the registry
+        this.resolved.protocol.get(`${this.resolved.host}lookup?role=${role}`, (res) => {
+            let text = ''
+            res.on('data', d => {
+                text += d
+            })
+            res.on('end', d => {
+                if (text.startsWith('OK ')) {
+                    return cb(null, text.substring(3))
+                }
+                cb(text)
+            })
+        })
     }
 }
 

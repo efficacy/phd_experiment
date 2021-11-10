@@ -160,11 +160,9 @@ app.get('/register', (req, res) => {
 
 app.get('/deregister', (req, res) => {
   let role = req.query.role
-  let address = req.query.address
 
-  store.removeIpAddressLease(role, address)
+  store.removeIpAddressLease(role)
   res.setHeader('Content-Type', 'text/plain')
-
   res.send('OK')
 })
 
@@ -230,7 +228,7 @@ app.get('/remove', (req, res) => {
     if (err) throw err
     res.setHeader('Content-Type', 'text/plain')
     res.send('OK')
-  });
+  })
 })
 
 app.get('/clear', (req, res) => {
@@ -238,18 +236,17 @@ app.get('/clear', (req, res) => {
     if (err) throw err
     res.setHeader('Content-Type', 'text/plain')
     res.send('OK')
-  });
+  })
 })
 
 app.use(express.static('static'))
-refreshVersions( (err, version) => {
-  if (err) throw err
-  app.listen(port, () => {
-    if (primary) {
-      client.register(primary, 'MIRROR', true)
-      console.log(`Registry Mirror listening on port ${port}`)
-    } else {
-      console.log(`Registry Primary listening on port ${port}`)
-    }
+
+function init(cb) {
+  refreshVersions( (err, version) => {
+    cb(err, app, port, primary)
   })
-})
+}
+
+module.exports = {
+  init: init
+}
