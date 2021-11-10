@@ -1,6 +1,6 @@
 const test = require('tape')
 
-const {Resolver} = require('../shared/resolver')
+const Resolver = require('../shared/resolver')
 
 let addresses = {
     LOGGER: '1.2.3.56'

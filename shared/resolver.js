@@ -1,7 +1,7 @@
 const https = require('https')
 const http = require('http')
 
-class Resolver {
+const Resolver = class {
     constructor(lookup) {
         this.lookup = lookup
     }
