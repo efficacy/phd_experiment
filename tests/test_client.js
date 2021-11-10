@@ -14,7 +14,7 @@ function lookup(role, cb) {
 
 let resolver = new Resolver(lookup)
 
-test('resolve explicit http', function (t) {
+test('resolve explicit http', (t) => {
     resolver.resolve('http://google.com/', (err, url, protocol) => {
         t.equal(url, 'http://google.com/', 'url')
         t.equal(protocol.globalAgent.protocol, 'http:', 'protocol')
@@ -22,7 +22,7 @@ test('resolve explicit http', function (t) {
     })
 })
 
-test('resolve explicit https', function (t) {
+test('resolve explicit https', (t) => {
     resolver.resolve('https://google.com/', (err, url, protocol) => {
         t.equal(url, 'https://google.com/', 'url')
         t.equal(protocol.globalAgent.protocol, 'https:', 'protocol')
@@ -30,7 +30,7 @@ test('resolve explicit https', function (t) {
     })
 })
 
-test('resolve implicit https', function (t) {
+test('resolve implicit https', (t) => {
     resolver.resolve('1.2.3.56', (err, url, protocol) => {
         t.equal(url, 'https://1.2.3.56/', 'url')
         t.equal(protocol.globalAgent.protocol, 'https:', 'protocol')
@@ -38,7 +38,7 @@ test('resolve implicit https', function (t) {
     })
 })
 
-test('resolve implicit https with slash', function (t) {
+test('resolve implicit https with slash', (t) => {
     resolver.resolve('1.2.3.56/', (err, url, protocol) => {
         t.equal(url, 'https://1.2.3.56/', 'url')
         t.equal(protocol.globalAgent.protocol, 'https:', 'protocol')
@@ -46,7 +46,7 @@ test('resolve implicit https with slash', function (t) {
     })
 })
 
-test('lookup known role', function (t) {
+test('lookup known role', (t) => {
     resolver.resolve('role://LOGGER/', (err, url, protocol) => {
         t.equal(url, 'https://1.2.3.56/', 'url')
         t.equal(protocol.globalAgent.protocol, 'https:', 'protocol')

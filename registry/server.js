@@ -120,6 +120,11 @@ function normalizePort(val) {
   return false;
 }
 
+app.get('/selfcheck', (req, res) => {
+  res.setHeader('Content-Type', 'text/plain')
+  res.send('OK')
+})
+
 app.get('/register', (req, res) => {
   let role = req.query.role
   let address = req.query.address
@@ -243,10 +248,15 @@ app.use(express.static('static'))
 
 function init(cb) {
   refreshVersions( (err, version) => {
-    cb(err, app, port, primary)
+    cb(err, app, port, primary, version)
   })
 }
 
+function bare(cb) {
+  cb(null, app, port, primary, null)
+}
+
 module.exports = {
-  init: init
+  init: init,
+  bare: bare
 }
