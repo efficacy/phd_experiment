@@ -44,10 +44,21 @@ test('registry is running', (t) => {
     })
 })
 
+test('register', (t) => {
+    ensure(() => {
+        client.register(`http://localhost:${registry_port}`, 'TEST', false, (err, expiry, config) => {
+            console.log(`test register expiry=${expiry} config=${JSON.stringify(config)}`)
+            t.error(err)
+            t.ok(expiry > 0)
+            t.end()
+        })
+    })
+})
+
 test.onFinish(() => {
     console.log('closing registry...')
     stop_registry(() => {
         console.log('registry stopped')
-        process.exit(0) // TODO this is a hack. Why does it hang unless I do this?
+        // process.exit(0) // TODO this is a hack. Why does it hang unless I do this?
     })
 })

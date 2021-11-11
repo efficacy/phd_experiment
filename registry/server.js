@@ -21,8 +21,20 @@ const store = new Store('leases.txt')
 const MIRROR = 'MIRROR'
 
 let client = new Client('192.168.1.1', port)
-let version = -1
-let versionData = {}
+let version = 0
+let versionData = {
+  0: {
+    scripts: {
+      "DUT.sh": "echo DUT level 0",
+      "LOAD.sh": "echo LOAD level 0",
+      "TEST.sh": "echo TEST level 0"
+    },
+    config: {
+      "version": 0,
+      "server": "phd.eu.openode.io"
+    }
+  }
+}
 
 function getfs(rootDir, accept, cb) {
   fs.readdir(rootDir, function(err, files) {
@@ -126,6 +138,7 @@ app.get('/selfcheck', (req, res) => {
 })
 
 app.get('/register', (req, res) => {
+  console.log(`..register q=${JSON.stringify(req.query)}`)
   let role = req.query.role
   let address = req.query.address
   let now = Date.now()
@@ -152,15 +165,18 @@ app.get('/register', (req, res) => {
     }
   }
 
-  res.send(`{
+  console.log(` building response: v=${version} r=${role} s=${server} v=${JSON.stringify(versionData)}`)
+  let response = `{
     "version": ${version},
     "role": "${role}",
     "server": "${server}",
-    "script": "${versionData['scripts'][role + '.sh'] || null}",
+    "script": "${versionData[version].scripts[role + '.sh'] || null}",
     "addresses": {
       ${index}
     }
-  }`)
+  }`
+  console.log(` built response: ${response}`)
+  res.send(response)
 })
 
 app.get('/deregister', (req, res) => {

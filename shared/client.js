@@ -63,13 +63,21 @@ const Client = class {
             callback(text)
         })
     }
-    register(host, role, keepalive) {
-        this.call(host, 'register', `address=${this.ip}:${this.myport}`, (err, headers, text) => {
-            if (err) throw (err)
-            let expiry = parseInt(headers['x-lease-expiry'])
-            if (keepalive) {
-                try {
-                    let config = JSON.parse(text)
+    register(host, role, keepalive, callback) {
+        console.log(`calling register for role ${role}...`)
+        this.call(host, 'register', `role=${role}&address=${this.ip}:${this.myport}`, (err, headers, text) => {
+            console.log(`  response e=${err} h=${headers} t=${text}`)
+            if (err) {
+                if (callback) {
+                    return callback(err)
+                } else {
+                    throw (err)
+                }
+            }
+            try {
+                let expiry = parseInt(headers['x-lease-expiry'])
+                let config = JSON.parse(text)
+                if (keepalive) {
                     if (config) {
                         host = config.server
                         this.config = config
@@ -80,9 +88,16 @@ const Client = class {
                     setTimeout(() => {
                         return this.register(host, role, keepalive)
                     }, lease)
-                } catch(err) {
-                    console.log(`error: ${err}\ntext: ${text}`)
                 }
+                if (callback) callback(null, expiry, config)
+            } catch(err) {
+                if (callback) {
+                    return callback(err)
+                } else {
+                    throw (err)
+                }
+
+                console.log(`error: ${err}\ntext: ${text}`)
             }
         })
     }
