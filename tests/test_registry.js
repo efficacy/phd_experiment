@@ -3,7 +3,7 @@ const server = require('../registry/server.js')
 const Client = require('../shared/client.js')
 const MemoryStore = require('../registry/store/memory.js')
 
-let client = new Client('192.168.1.1', 9999)
+const beacon = '192.168.1.1'
 let store = new MemoryStore()
 
 let registry_service = null
@@ -20,12 +20,17 @@ function start_registry(cb) {
     })
 }
 
-function ensure(cb) {
-    if (null != registry_service) {
-        return cb()
-    } else {
-        start_registry(cb)
-    }
+function ensure(port, callback) {
+    let client = new Client(beacon, port)
+    client.findIp(() => {
+        if (null != registry_service) {
+            return callback(client)
+        } else {
+            start_registry(() => {
+                callback(client)
+            })
+        }
+    })
 }
 
 function stop_registry(cb) {
@@ -37,7 +42,7 @@ function stop_registry(cb) {
 }
 
 test('registry is running', (t) => {
-    ensure(() => {
+    ensure(9999, (client) => {
         client.selfcheck(`http://localhost:${registry_port}`, (err, text) => {
             t.error(err)
             t.equal(text, 'OK')
@@ -47,7 +52,7 @@ test('registry is running', (t) => {
 })
 
 test('register known role', (t) => {
-    ensure(() => {
+    ensure(9999, (client) => {
         client.register(`http://localhost:${registry_port}`, 'TEST', false, (err, expiry, config) => {
             // console.log(`test register expiry=${expiry} config=${JSON.stringify(config)}`)
             t.error(err)
@@ -59,12 +64,12 @@ test('register known role', (t) => {
 })
 
 test('register unknown role', (t) => {
-    ensure(() => {
+    ensure(9998, (client) => {
         client.register(`http://localhost:${registry_port}`, 'UGH', false, (err, expiry, config) => {
             // console.log(`test register expiry=${expiry} config=${JSON.stringify(config)}`)
             t.error(err)
             t.ok(expiry > 0)
-            t.ok(config.addresses['UGH'].endsWith(':9999'))
+            t.ok(config.addresses['UGH'].endsWith(':9998'))
             t.end()
         })
     })

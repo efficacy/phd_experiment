@@ -1,6 +1,8 @@
 const net = require('net');
 const Resolver = require('./resolver')
 
+var ip // global as it refers to the whole machine
+
 const Client = class {
     constructor(beacon, myport) {
         this.beacon = beacon
@@ -8,15 +10,21 @@ const Client = class {
         this.config = {}
         this.resolver = new Resolver(this.lookup)
         this.resolved = {}
-        const client = net.connect({
+    }
+    findIp(callback) {
+        if (ip) {
+            return callback(ip)
+        }
+        let client = net.connect({
             port: 80,
             host: this.beacon
         }, () => {
-            this.ip = client.localAddress
+            ip = client.localAddress
+            callback(ip)
         })
     }
     getSelf() {
-        return `${this.ip}:${this.myport}`
+        return `${ip}:${this.myport}`
     }
     get(host, protocol, action, params, callback) {
         protocol.get(`${host}${action}?${params}`, (res) => {
@@ -64,7 +72,7 @@ const Client = class {
         })
     }
     register(host, role, keepalive, callback) {
-        this.call(host, 'register', `role=${role}&address=${this.ip}:${this.myport}`, (err, headers, text) => {
+        this.call(host, 'register', `role=${role}&address=${ip}:${this.myport}`, (err, headers, text) => {
             if (err) {
                 if (callback) {
                     return callback(err)
