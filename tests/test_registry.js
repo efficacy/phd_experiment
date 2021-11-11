@@ -1,14 +1,16 @@
 const test = require('tape')
 const server = require('../registry/server.js')
 const Client = require('../shared/client.js')
+const MemoryStore = require('../registry/store/memory.js')
 
 let client = new Client('192.168.1.1', 9999)
+let store = new MemoryStore()
 
 let registry_service = null
 let registry_port = null
 
 function start_registry(cb) {
-    server.bare((err, app, port) => {
+    server.init(store, (err, app, port) => {
         if (err) throw err
         registry_service = app.listen(port, () => {
             registry_port = port
@@ -44,12 +46,25 @@ test('registry is running', (t) => {
     })
 })
 
-test('register', (t) => {
+test('register known role', (t) => {
     ensure(() => {
         client.register(`http://localhost:${registry_port}`, 'TEST', false, (err, expiry, config) => {
-            console.log(`test register expiry=${expiry} config=${JSON.stringify(config)}`)
+            // console.log(`test register expiry=${expiry} config=${JSON.stringify(config)}`)
             t.error(err)
             t.ok(expiry > 0)
+            t.ok(config.addresses['TEST'].endsWith(':9999'))
+            t.end()
+        })
+    })
+})
+
+test('register unknown role', (t) => {
+    ensure(() => {
+        client.register(`http://localhost:${registry_port}`, 'UGH', false, (err, expiry, config) => {
+            // console.log(`test register expiry=${expiry} config=${JSON.stringify(config)}`)
+            t.error(err)
+            t.ok(expiry > 0)
+            t.ok(config.addresses['UGH'].endsWith(':9999'))
             t.end()
         })
     })
@@ -59,6 +74,6 @@ test.onFinish(() => {
     console.log('closing registry...')
     stop_registry(() => {
         console.log('registry stopped')
-        // process.exit(0) // TODO this is a hack. Why does it hang unless I do this?
+        process.exit(0) // TODO this is a hack. Why does it hang unless I do this?
     })
 })

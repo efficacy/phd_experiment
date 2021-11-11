@@ -1,6 +1,7 @@
 const express = require('express')
 const fs = require('fs')
-const Store = require('./store/files')
+const MemoryStore = require('./store/memory')
+const FileStore = require('./store/files')
 const {Client} = require('../shared')
 
 const app = express()
@@ -16,25 +17,10 @@ if (args.length > 1) {
 }
 port = port || normalizePort(process.env.PORT || '3002');
 
-const store = new Store('leases.txt')
-
+let store = null
 const MIRROR = 'MIRROR'
 
 let client = new Client('192.168.1.1', port)
-let version = 0
-let versionData = {
-  0: {
-    scripts: {
-      "DUT.sh": "echo DUT level 0",
-      "LOAD.sh": "echo LOAD level 0",
-      "TEST.sh": "echo TEST level 0"
-    },
-    config: {
-      "version": 0,
-      "server": "phd.eu.openode.io"
-    }
-  }
-}
 
 function getfs(rootDir, accept, cb) {
   fs.readdir(rootDir, function(err, files) {
@@ -77,45 +63,6 @@ function fileContents(fname, callback) {
   });
 }
 
-function refreshVersions(callback) {
-  let bestdir = null
-  getdirs('versions', dirs => {
-    for (let dir of dirs) {
-      let v = parseFloat(dir)
-      if (v > version) {
-        version = v
-        bestdir = dir
-      }
-    }
-    console.log(`serving version ${version}`)
-
-    fileContents('versions/' + bestdir + '/config.json', (err, s) => {
-      if (!err) {
-        versionData['config'] = JSON.parse(s)
-      }
-      let scripts = {}
-      getfiles('versions/' + bestdir + '/scripts', scripts => {
-        if  (scripts.length == 0) {
-          return callback(err, version)
-        }
-        let done = 0
-        for (let script of scripts) {
-          fileContents('versions/' + bestdir + '/scripts/' + script, (err, s) => {
-            ++done
-            if (!err) {
-              scripts[script] = s
-            }
-            if (done == scripts.length) {
-              versionData['scripts'] = scripts
-              callback(err, version)
-            }
-          })
-        }
-      })
-    })
-  })
-}
-
 function normalizePort(val) {
   var port = parseInt(val, 10);
 
@@ -138,7 +85,6 @@ app.get('/selfcheck', (req, res) => {
 })
 
 app.get('/register', (req, res) => {
-  console.log(`..register q=${JSON.stringify(req.query)}`)
   let role = req.query.role
   let address = req.query.address
   let now = Date.now()
@@ -165,7 +111,8 @@ app.get('/register', (req, res) => {
     }
   }
 
-  console.log(` building response: v=${version} r=${role} s=${server} v=${JSON.stringify(versionData)}`)
+  let version = store.getVersion()
+  let versionData = store.getVersionData()
   let response = `{
     "version": ${version},
     "role": "${role}",
@@ -175,7 +122,6 @@ app.get('/register', (req, res) => {
       ${index}
     }
   }`
-  console.log(` built response: ${response}`)
   res.send(response)
 })
 
@@ -262,17 +208,13 @@ app.get('/clear', (req, res) => {
 
 app.use(express.static('static'))
 
-function init(cb) {
-  refreshVersions( (err, version) => {
+function init(_store, cb) {
+  store = _store || new FileStore('leases.txt')
+  store.refreshVersions( (err, version) => {
     cb(err, app, port, primary, version)
   })
 }
 
-function bare(cb) {
-  cb(null, app, port, primary, null)
-}
-
 module.exports = {
-  init: init,
-  bare: bare
+  init: init
 }

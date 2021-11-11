@@ -2,6 +2,20 @@ const Store = class {
     constructor() {
         this.leases = {}
         this.duration = 5000
+        this.version = 0
+        this.versionData = {
+          0: {
+            scripts: {
+              "DUT.sh": "echo DUT level 0",
+              "LOAD.sh": "echo LOAD level 0",
+              "TEST.sh": "echo TEST level 0"
+            },
+            config: {
+              "version": 0,
+              "server": "phd.eu.openode.io"
+            }
+          }
+        }
     }
     addIpAddressLease(role,address,when) {
         this.leases[role] = {role: role, address: address, when: when}
@@ -49,6 +63,20 @@ const Store = class {
     clear(callback) {
         this.leases = {}
         return callback()
+    }
+
+    getVersion() {
+        return this.version
+    }
+    getVersionData() {
+        return this.versionData
+    }
+    refreshVersions(callback) {
+        callback(null, this.version)
+    }
+    setVersionData(version, versionData) {
+        this.version = version
+        this.versionData = versionData
     }
 }
 module.exports = Store

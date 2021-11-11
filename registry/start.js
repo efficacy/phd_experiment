@@ -1,6 +1,6 @@
 const server = require('./server')
 
-server.init((err, app, port, primary) => {
+server.init(null, (err, app, port, primary) => {
   if (err) throw err
   app.listen(port, () => {
     if (primary) {

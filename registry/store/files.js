@@ -66,5 +66,55 @@ const Store = class {
             })
         })
     }
+
+    getVersion() {
+        return cache.getVersion()
+    }
+    getVersionData() {
+        return cache.getVersionData()
+    }
+    refreshVersions(callback) {
+        let bestdir = null
+        let version = 0
+        let versionData = {}
+        getdirs('versions', dirs => {
+          for (let dir of dirs) {
+            let v = parseFloat(dir)
+            if (v > version) {
+              version = v
+              bestdir = dir
+            }
+          }
+          console.log(`serving version ${version}`)
+
+          fileContents('versions/' + bestdir + '/config.json', (err, s) => {
+            if (!err) {
+              versionData['config'] = JSON.parse(s)
+            }
+            let scripts = {}
+            getfiles('versions/' + bestdir + '/scripts', scripts => {
+              if  (scripts.length > 0) {
+                versionData['scripts'] = {}
+                this.cache.setVersionData(version, versionData)
+                callback(err, version)
+          }
+              let done = 0
+              for (let script of scripts) {
+                fileContents('versions/' + bestdir + '/scripts/' + script, (err, s) => {
+                  ++done
+                  if (!err) {
+                    scripts[script] = s
+                  }
+                  if (done == scripts.length) {
+                    versionData['scripts'] = scripts
+                    this.cache.setVersionData(version, versionData)
+                    callback(err, version)
+                  }
+                })
+              }
+            })
+          })
+        })
+    }
 }
 module.exports = Store

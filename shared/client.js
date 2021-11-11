@@ -64,9 +64,7 @@ const Client = class {
         })
     }
     register(host, role, keepalive, callback) {
-        console.log(`calling register for role ${role}...`)
         this.call(host, 'register', `role=${role}&address=${this.ip}:${this.myport}`, (err, headers, text) => {
-            console.log(`  response e=${err} h=${headers} t=${text}`)
             if (err) {
                 if (callback) {
                     return callback(err)
@@ -96,7 +94,6 @@ const Client = class {
                 } else {
                     throw (err)
                 }
-
                 console.log(`error: ${err}\ntext: ${text}`)
             }
         })
