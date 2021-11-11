@@ -1,1 +1,2 @@
-require('./test_client')
+require('./test_resolve')
+require("./test_registry")
