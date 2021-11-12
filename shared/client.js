@@ -4,20 +4,21 @@ const Resolver = require('./resolver')
 var ip // global as it refers to the whole machine
 
 const Client = class {
-    constructor(beacon, myport) {
-        this.beacon = beacon
+    constructor(myport, registry) {
         this.myport = myport
-        this.config = {}
+        this.registry = registry
+
+        this.config = {addresses: {}}
         this.resolver = new Resolver(this.lookup)
         this.resolved = {}
     }
-    findIp(callback) {
+    static findIp(beacon, callback) {
         if (ip) {
             return callback(ip)
         }
         let client = net.connect({
             port: 80,
-            host: this.beacon
+            host: beacon
         }, () => {
             ip = client.localAddress
             callback(ip)
@@ -39,7 +40,8 @@ const Client = class {
             callback(err)
         });
     }
-    call(host, action, params, callback) {
+    call(action, params, callback) {
+        let host = this.registry
         if (host in this.resolved) {
             return this.get(this.resolved[host].host, this.resolved[host].protocol, action, params, callback)
         }
@@ -49,19 +51,19 @@ const Client = class {
             return this.get(host, protocol, action, params, callback)
         })
     }
-    selfcheck(host, callback) {
-        this.call(host, 'selfcheck', '', (err, headers, text) => {
+    selfcheck(callback) {
+        this.call('selfcheck', '', (err, headers, text) => {
             callback(err, text)
         })
     }
-    lookup(host, role, callback) {
+    lookup(role, callback) {
         if (!this.config) {
             return callback('registration config missing')
         }
         if (role in this.config.addresses) {
             return callback(null, this.config.addresses[role])
         }
-        this.call(host, 'lookup', `role=${role}`, (err, headers, text) => {
+        this.call('lookup', `role=${role}`, (err, headers, text) => {
             if (err) {
                 return callback(err)
             }
@@ -71,8 +73,8 @@ const Client = class {
             callback(text)
         })
     }
-    register(host, role, keepalive, callback) {
-        this.call(host, 'register', `role=${role}&address=${ip}:${this.myport}`, (err, headers, text) => {
+    register(role, keepalive, callback) {
+        this.call('register', `role=${role}&address=${ip}:${this.myport}`, (err, headers, text) => {
             if (err) {
                 if (callback) {
                     return callback(err)
