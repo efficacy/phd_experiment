@@ -2,7 +2,9 @@ const express = require('express')
 const fs = require('fs')
 const MemoryStore = require('./store/memory')
 const FileStore = require('./store/files')
-const {Client} = require('../shared')
+const {
+  Client
+} = require('../shared')
 
 const app = express()
 
@@ -21,47 +23,6 @@ let store = null
 const MIRROR = 'MIRROR'
 
 let client = new Client('192.168.1.1', port)
-
-function getfs(rootDir, accept, cb) {
-  fs.readdir(rootDir, function(err, files) {
-    if (err) throw err
-    let dirs = []
-    for (var index = 0; index < files.length; ++index) {
-      let file = files[index]
-      if (file[0] !== '.') {
-        let filePath = rootDir + '/' + file;
-        fs.stat(filePath, function(err, stat) {
-          if (accept(stat)) {
-            dirs.push(this.file)
-          }
-          if (files.length === (this.index + 1)) {
-            return cb(dirs)
-          }
-        }.bind({index: index, file: file}))
-      }
-    }
-  })
-}
-
-function getdirs(rootDir, cb) {
-  return getfs(rootDir, stat => stat.isDirectory(), cb)
-}
-
-function getfiles(rootDir, cb) {
-  return getfs(rootDir, stat => stat.isFile(), cb)
-}
-
-function fileContents(fname, callback) {
-  fs.readFile(fname, (err, buf) => {
-    if (err) {
-      console.error(err)
-      return callback(err)
-    }
-
-    // otherwise log contents
-    callback(null, buf.toString())
-  });
-}
 
 function normalizePort(val) {
   var port = parseInt(val, 10);
@@ -210,7 +171,7 @@ app.use(express.static('static'))
 
 function init(_store, cb) {
   store = _store || new FileStore('leases.txt')
-  store.refreshVersions( (err, version) => {
+  store.refreshVersions((err, version) => {
     cb(err, app, port, primary, version)
   })
 }
