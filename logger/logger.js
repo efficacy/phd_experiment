@@ -1,6 +1,7 @@
 const express = require('express')
 const memstore = require('./logstore-memory')
-const sqlstore = require('./logstore-mysql')
+const mysqlstore = require('./logstore-mysql')
+const pgsqlstore = require('./logstore-postgres')
 const {Client} = require('../shared')
 
 const app = express()
@@ -16,7 +17,19 @@ if (args.length > 1) {
 }
 port = port || normalizePort(process.env.PORT || '3002');
 
-let store = process.env.STORE == 'memory' ? memstore : sqlstore;
+let store;
+switch(process.env.STORE) {
+  case 'memory':
+    store = memstore;
+    break;
+  case 'mysql':
+    store = mysqlstore;
+    break;
+  case 'pg':
+  default:
+    store = pgsqlstore;
+}
+
 let client = new Client('192.168.1.1', port)
 
 function normalizePort(val) {
@@ -52,15 +65,18 @@ app.get('/log', (req, res) => {
 })
 
 app.get('/rebuild', (req, res) => {
-  store.rebuild()
-  res.setHeader('Content-Type', 'text/plain')
-  res.send(`OK`)
+  store.rebuild((err) => {
+    res.setHeader('Content-Type', 'text/plain')
+    res.send(err)
+  })
 })
 
-store.start()
-app.listen(port, () => {
-  if (primary) {
-    client.register(primary, 'LOGGER', true)
-  }
-  console.log(`Example app listening on port ${port}`)
+store.start((err) => {
+  console.log(`Database initialisation: ${err}`)
+  app.listen(port, () => {
+    if (primary) {
+      client.register(primary, 'LOGGER', true)
+    }
+    console.log(`Example app listening on port ${port}`)
+  })
 })

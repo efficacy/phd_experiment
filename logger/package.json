@@ -18,6 +18,7 @@
   "homepage": "https://bitbucket.org/efficacystudy/logger#readme",
   "dependencies": {
     "express": "^4.17.1",
-    "mysql": "^2.18.1"
+    "mysql": "^2.18.1",
+    "pg": "^8.7.1"
   }
 }
