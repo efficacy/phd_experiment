@@ -1,0 +1,164 @@
+<html><head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<title>Experiment Registry</title>
+	</head>
+	<body>
+	<script>
+	function httpGet(url, callback)
+	{
+		var xhr = new XMLHttpRequest();
+		xhr.open("GET", url, true);
+		xhr.onload = function (e) {
+			callback(xhr.responseText);
+		};
+		xhr.send(null);
+	}
+	
+	function getStatus() {
+		httpGet('/status', function(status) {
+			var decoded = JSON.parse(status)
+			document.getElementById("status/session").innerHTML = decoded.session
+			document.getElementById("status/count").innerHTML = decoded.count
+		})
+	}
+	
+	function catchSubmit(form, callback) {
+		if (form.attachEvent) {
+			form.attachEvent("submit", callback);
+		} else {
+			form.addEventListener("submit", callback);
+		}
+	}
+	
+	function remove(role, output) {
+		event.preventDefault()
+		fetch(`/remove?role=${role}`, {mode: 'cors'}).then((r)=>{r.text().then((s) => {
+			let dest = document.getElementById(output)
+			dest.innerHTML = s
+			setTimeout(() => {
+				dest.innerHTML = ''
+				getStatus();
+			}, 1000)
+		})})
+	}
+	
+	window.onload = function() {
+		getStatus();
+	
+		var setup = document.getElementById('start');
+		catchSubmit(start, function(event) {
+			event.preventDefault();
+			var session = start.elements['session'].value.trim()
+			if (session) {
+				httpGet('/setup?s='+session, function(text) {
+					document.getElementById("start-output").innerHTML = text
+					getStatus();
+					setTimeout(() => {
+						document.getElementById('start-output').innerHTML = ''
+						start.elements['session'].value = ''
+					}, 1000)
+				})
+			} else {
+				document.getElementById("start-output").innerHTML = "Please supply valid session name"
+			}
+			return false
+		})
+	
+		var log = document.getElementById('log');
+		catchSubmit(log, function(event) {
+			event.preventDefault();
+			var stamp = log.elements['stamp'].value.trim()
+			var voltage = log.elements['voltage'].value.trim()
+			var current = log.elements['current'].value.trim()
+			if (stamp && voltage && current) {
+				httpGet('/log?t='+stamp+'&v='+voltage+'&i='+current, function(text) {
+					document.getElementById("log-output").innerHTML = text
+					getStatus();
+					setTimeout(() => {
+						document.getElementById('log-output').innerHTML = ''
+						log.elements['stamp'].value = ''
+						log.elements['voltage'].value = ''
+						log.elements['current'].value = ''
+					}, 1000)
+				})
+			} else {
+				document.getElementById("log-output").innerHTML = "Please supply valid session name"
+			}
+			return false
+		})
+	
+		document.getElementById('truncate').addEventListener('click', event => {
+			event.preventDefault()
+			fetch('/truncate', {mode: 'cors'}).then((r)=>{r.text().then((s) => {
+				document.getElementById('truncate-output').innerHTML = s
+				setTimeout(() => {
+					document.getElementById('truncate-output').innerHTML = ''
+				}, 1000)
+				getStatus();
+			})})
+		})
+	
+		document.getElementById('rebuild').addEventListener('click', event => {
+			event.preventDefault()
+			fetch('/rebuild', {mode: 'cors'}).then((r)=>{r.text().then((s) => {
+				document.getElementById('rebuild-output').innerHTML = s
+				setTimeout(() => {
+					document.getElementById('rebuild-output').innerHTML = ''
+				}, 1000)
+				getStatus();
+			})})
+		})
+	}
+	</script>
+	
+	<H1>Experiment Logger</h1>
+	<div id='status'>
+	<table>
+		<tr><th align='right'>Active Session: </th><td><span id='status/session'></span></td></tr>
+		<tr><th align='right'>Database Size: </th><td><span id='status/count'></span> rows</td></tr>
+	</table>
+	</div>
+
+	<h1>Start Session</h1>
+	<form id='start'>
+		<label for='session'>Session:</label>
+		<input type='text' id='session' name='session'/>
+		<button type="submit">Submit</button> <span id=start-output></span>
+	</form>
+	
+	<h1>Log</h1>
+	<form id='log'>
+		<label for='stamp'>Timestamp:</label>
+		<input type='text' id='stamp' name='stamp'/>
+		<label for='voltage'>Voltage:</label>
+		<input type='text' id='voltage' name='voltage'/>
+		<label for='current'>Current:</label>
+		<input type='text' id='current' name='current'/>
+		<button type="submit">Submit</button> <span id=log-output></span>
+	</form>
+	
+	<!--
+	<h1>Lookup</h1>
+	<form id='lookup'>
+		<label for='role'>Role:</label>
+		<input type='text' id='role' name='role'/>
+		<button type="submit">Submit</button>
+	</form>
+	<div id=lookout></div>
+	
+	<h1>Set Default Lease</h1>
+	<form id='lease'>
+		<label for='duration'>Duration:</label>
+		<input type='text' id='duration' name='duration'/>
+		<button type="submit">Submit</button>
+	</form>
+	<div id=leaseout></div>
+	-->
+	<h1>General Operations</h1>
+	<ul>
+		<li><a href='#' id='truncate'>Truncate Log Table</a> <span id='truncate-output'></span></li>
+		<li><a href='#' id='rebuild'>Rebuild Log Table</a> <span id='rebuild-output'></span></li>
+	</ul>
+	
+	</body>
+</html>

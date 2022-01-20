@@ -48,11 +48,38 @@ function normalizePort(val) {
   return false;
 }
 
+app.get('/status', (req, res) => {
+  store.status((err, session, count) => {
+    res.setHeader('Content-Type', 'text/plain')
+    if (err) {
+      res.send(JSON.stringify({'error': err}))
+    } else {
+      let status = JSON.stringify({'session': session, 'count': count})
+      res.send(status)
+    }
+  })
+})
+
+app.get('/truncate', (req, res) => {
+  store.truncate((err) => {
+    res.setHeader('Content-Type', 'text/plain')
+    res.send(err)
+  })
+})
+
+app.get('/rebuild', (req, res) => {
+  store.rebuild((err) => {
+    res.setHeader('Content-Type', 'text/plain')
+    res.send(err)
+  })
+})
+
 app.get('/setup', (req, res) => {
   let session = req.query.s
-  store.setup(session)
-  res.setHeader('Content-Type', 'text/plain')
-  res.send(`OK`)
+  store.setup(session, (err) => {
+    res.setHeader('Content-Type', 'text/plain')
+    res.send(err)
+  })
 })
 
 app.get('/log', (req, res) => {
@@ -64,12 +91,7 @@ app.get('/log', (req, res) => {
   res.send(`OK`)
 })
 
-app.get('/rebuild', (req, res) => {
-  store.rebuild((err) => {
-    res.setHeader('Content-Type', 'text/plain')
-    res.send(err)
-  })
-})
+app.use(express.static('static'))
 
 store.start((err) => {
   console.log(`Database initialisation: ${err}`)
@@ -77,6 +99,6 @@ store.start((err) => {
     if (primary) {
       client.register(primary, 'LOGGER', true)
     }
-    console.log(`Example app listening on port ${port}`)
+    console.log(`Experiment Logger listening on port ${port}`)
   })
 })

@@ -2,9 +2,7 @@ const express = require('express')
 const fs = require('fs')
 const MemoryStore = require('./store/memory')
 const FileStore = require('./store/files')
-const {
-  Client
-} = require('../shared')
+const { Client } = require('../shared')
 
 const app = express()
 
