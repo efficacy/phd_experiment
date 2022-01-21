@@ -15,7 +15,7 @@ if (args.length > 0) {
 if (args.length > 1) {
   primary = args[1]
 }
-port = port || normalizePort(process.env.PORT || '3002');
+port = port || normalizePort(process.env.PORT || '3001');
 
 let store = null
 const MIRROR = 'MIRROR'
