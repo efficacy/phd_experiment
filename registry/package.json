@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "async": "^3.2.3",
     "express": "^4.17.1"
   },
   "scripts": {
@@ -9,7 +10,6 @@
   "version": "1.0.0",
   "description": "central experiment registry to connect other services",
   "main": "server.js",
-  "devDependencies": {},
   "repository": {
     "type": "git",
     "url": "git+ssh://git@bitbucket.org/efficacystudy/cs-node.git"

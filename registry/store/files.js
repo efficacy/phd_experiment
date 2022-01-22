@@ -1,4 +1,5 @@
 const fs = require('fs')
+const async = require('async')
 const MemoryStore = require('./memory')
 
 function fileContents(fname, callback) {
@@ -51,73 +52,121 @@ const Store = class {
     this.cache = new MemoryStore()
     this.loaded = false
   }
-  addIpAddressLease(role, address, when) {
-    this.fetch()
-    this.cache.addIpAddressLease(role, address, when)
-    this.flush()
-  }
-  removeIpAddressLease(role, callback) {
-    this.fetch()
-    this.cache.removeIpAddressLease(role, (err) => {
-      this.flush()
-      return callback(err)
-    })
-  }
-  getAddress(role, when) {
-    this.fetch()
-    return this.cache.getAddress(role, when)
-  }
-  each(fn) {
-    this.fetch()
-    this.cache.each(fn)
-  }
-  setLeaseDurationInMillis(duration) {
-    this.cache.setLeaseDurationInMillis(duration)
-  }
-  getLeaseDurationInMillis(role) {
-    this.fetch()
-    return this.cache.getLeaseDurationInMillis(role)
-  }
-  reap(when) {
-    this.fetch()
-    this.cache.reap(when)
-    this.flush()
+  static create(filename) {
+    return new Store(filename || 'leases.txt')
   }
 
-  fetch() {
-    if (this.loaded) return
-    if (!fs.existsSync(this.filename)) return
-    fs.readFileSync(this.filename, 'utf-8').split(/\r?\n/).forEach((line) => {
-      if (line.trim().length > 0) {
-        var parts = line.split(',')
-        this.cache.addIpAddressLease(parts[0], parts[1], parseInt(parts[2]))
-      }
+  addIpAddressLease(role, address, when, callback) {
+    this.fetch((err) => {
+      if (err) return callback(err)
+      this.cache.addIpAddressLease(role, address, when, (err) => {
+        this.flush(callback)
+      })
     })
-    this.loaded = true
   }
-  flush() {
-    var buf = ''
-    this.cache.each((lease) => {
-      buf += `${lease.role},${lease.address},${lease.when}\n`
+
+  removeIpAddressLease(role, callback) {
+    this.fetch((err) => {
+      if (err) return callback(err)
+      this.cache.removeIpAddressLease(role, (err) => {
+        this.flush(callback)
+      })
     })
-    fs.writeFileSync(this.filename, buf)
   }
-  clear(callback) {
-    this.fetch()
-    return fs.unlink(this.filename, (err) => {
-      if (err instanceof Error && err.code == 'ENOENT') err = null
-      this.cache.clear(() => {
+ 
+  getAddress(role, when, callback) {
+    this.fetch((err) => {
+      if (err) return callback(err)
+      this.cache.getAddress(role, when, callback)
+    })
+  }
+
+  each(fn, callback) {
+    this.fetch((err) => {
+      if (err) return callback(err)
+      this.cache.each(fn, callback)
+    })
+  }
+
+  setLeaseDurationInMillis(duration, callback) {
+    this.fetch((err) => {
+      if (err) return callback(err)
+      this.cache.setLeaseDurationInMillis(duration, callback)
+    })
+  }
+
+  getLeaseDurationInMillis(role, callback) {
+    this.fetch((err) => {
+      if (err) return callback(err)
+      this.cache.getLeaseDurationInMillis(role, callback)
+    })
+  }
+
+  reap(when, callback) {
+    this.fetch((err) => {
+      if (err) return callback(err)
+      this.cache.reap(when, (err) => {
+        this.flush()
         return callback(err)
       })
     })
   }
 
-  getVersion() {
-    return cache.getVersion()
+  fetch(callback) {
+    if (this.loaded) return callback()
+    if (!fs.existsSync(this.filename)) return callback(`file ${this.filename} does not exist`)
+    fs.readFile(this.filename, 'utf8', (err, content) => {
+      if (err) return step(err)
+      async.each(content.split(/\r?\n/), (line, step) => {
+        if (line.trim().length > 0) {
+          var parts = line.split(',')
+          this.cache.addIpAddressLease(parts[0], parts[1], parseInt(parts[2]), step)
+        } else {
+          return step()
+        }
+      }, (err) => {
+        this.loaded = true
+        return callback(err)
+      })
+    })
   }
-  getVersionData() {
-    return cache.getVersionData()
+
+  flush(callback) {
+    var buf = ''
+    async.each(this.cache, (lease, step) => {
+      buf += `${lease.role},${lease.address},${lease.when}\n`
+      return step()
+    }, () => {
+      fs.writeFile(this.filename, buf, ()=> {
+        return callback()
+      })
+    })
   }
+
+  clear(callback) {
+    this.fetch((err) => {
+      if (err) return callback(err)
+      return fs.unlink(this.filename, (err) => {
+        if (err instanceof Error && err.code == 'ENOENT') err = null
+        this.cache.clear(callback)
+      })
+    })
+  }
+
+  getVersion(callback) {
+    this.fetch((err) => {
+      if (err) return callback(err)
+      return this.cache.getVersion(callback)
+    })
+  }
+
+  getVersionData(callback) {
+    this.fetch((err) => {
+      if (err) return callback(err)
+      return this.cache.getVersionData(callback)
+    })
+  }
+
   refreshVersions(callback) {
     let bestdir = null
     let version = 0
@@ -130,7 +179,7 @@ const Store = class {
           bestdir = dir
         }
       }
-      console.log(`serving version ${version}`)
+      console.log(`* serving version ${version}`)
 
       fileContents('versions/' + bestdir + '/config.json', (err, s) => {
         if (!err) {
@@ -140,8 +189,9 @@ const Store = class {
         getfiles('versions/' + bestdir + '/scripts', scripts => {
           if (scripts.length == 0) {
             versionData['scripts'] = {}
-            this.cache.setVersionData(version, versionData)
-            callback(err, version)
+            this.cache.setVersionData(version, versionData, (err) => {
+              callback(err, version)
+            })
           }
           let done = 0
           for (let script of scripts) {
@@ -152,8 +202,9 @@ const Store = class {
               }
               if (done == scripts.length) {
                 versionData['scripts'] = scripts
-                this.cache.setVersionData(version, versionData)
-                callback(err, version)
+                this.cache.setVersionData(version, versionData, (err) => {
+                  callback(err, version)
+                })
               }
             })
           }

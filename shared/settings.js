@@ -7,14 +7,13 @@ function findIp(beacon, callback) {
         host: beacon
     }, () => {
         let ip = client.localAddress
-        console.log(`found ip address: ${ip}`)
         callback(ip)
     })
 }
 
 const Settings = class {
-    constructor(dfl_role, dfl_port) {
-        console.log(`settings constructor role=${dfl_role} port=${dfl_port}`)
+    constructor(defaults) {
+        defaults = defaults || {}
         this.settings = {}
 
         let argv = yargs
@@ -43,14 +42,20 @@ const Settings = class {
                 description: 'IP address to connect to to work out my IP address',
                 type: 'string'
             })
+            .option('store', {
+                alias: 's',
+                description: 'type of store to use for persistence (memory,files,mysql,pg)',
+                type: 'string'
+            })
             .help()
             .alias('help', 'h').argv
 
-        this.settings.address = argv.address || process.env.ADDRESS
-        this.settings.role = argv.role || process.env.ROLE || dfl_role
-        this.settings.port = argv.port || process.env.PORT || dfl_port
-        this.settings.registry = argv.registry || process.env.REGISTRY
-        this.settings.beacon = argv.beacon || process.env.BEACON || '192.168.0.1'
+        this.settings.address = argv.address || process.env.ADDRESS || defaults.address
+        this.settings.port = argv.port || process.env.PORT || defaults.port
+        this.settings.role = argv.role || process.env.ROLE || defaults.role
+        this.settings.registry = argv.registry || process.env.REGISTRY || defaults.registry
+        this.settings.beacon = argv.beacon || process.env.BEACON || defaults.beacon || '192.168.0.1'
+        this.settings.store = argv.store || process.env.STORE || defaults.store
         this.settings.args = argv._
     }
     init(callback) {
@@ -58,11 +63,13 @@ const Settings = class {
         if (!this.settings.address) {
             findIp(this.settings.registry || this.settings.beacon, (ip) => {
                 this.settings.address = ip
-                console.log(`settings: ${JSON.stringify(this.settings)}`)
+                this.settings.self = `${this.settings.address}:${this.settings.port}`
+                // console.log(`settings: ${JSON.stringify(this.settings)}`)
                 callback(this.settings)
             })
         } else {
-            console.log(`settings: ${JSON.stringify(this.settings)}`)
+            this.settings.self = `${this.settings.address}:${this.settings.port}`
+            // console.log(`settings: ${JSON.stringify(this.settings)}`)
             callback(this.settings)
         }
     }
@@ -72,10 +79,6 @@ const Settings = class {
         }
         return this.init(callback)
     }
-    getSelf() {
-        return `${this.settings.address}:${this.settings.port}`
-    }
-
 }
 
 module.exports = Settings

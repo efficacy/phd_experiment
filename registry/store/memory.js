@@ -17,43 +17,47 @@ const Store = class {
       }
     }
   }
-  addIpAddressLease(role, address, when) {
+  static create() {
+    return new Store()
+  }
+  addIpAddressLease(role, address, when, callback) {
     this.leases[role] = {
       role: role,
       address: address,
       when: when
     }
+    return callback()
   }
   removeIpAddressLease(role, callback) {
     delete this.leases[role]
     return callback()
   }
-  getAddress(role, when) {
+  getAddress(role, when, callback) {
     when = when || Date.now()
     var lease = this.leases[role]
-    if (!lease || lease.when < when) return null
-    return lease.address
+    return callback(null, (!lease || lease.when < when) ? null : lease.address)
   }
-  each(fn) {
+  each(fn, callback) {
     Object.entries(this.leases).forEach((pair) => {
       let value = pair[1]
       fn(value)
     })
+    return callback()
   }
-  setLeaseDurationInMillis(duration) {
+  setLeaseDurationInMillis(duration, callback) {
     this.duration = parseInt(duration)
-    console.log(`new duration: ${this.duration}`)
+    return callback()
   }
-  getLeaseDurationInMillis(role) {
+  getLeaseDurationInMillis(role, callback) {
     // MIRROR is a local server, and should be timed to minimise lease renewals
     // Others should be relatively quick, so they all register with the mirror if available
     let ret = this.duration
     if (role == 'MIRROR' || !('MIRROR' in this.leases)) {
       ret = 86400000
     }
-    return ret
+    return callback(null, ret)
   }
-  reap(when) {
+  reap(when, callback) {
     var active = {}
     Object.entries(this.leases).forEach((pair) => {
       let key = pair[0]
@@ -63,24 +67,26 @@ const Store = class {
       }
     })
     this.leases = active
+    return callback()
   }
   clear(callback) {
     this.leases = {}
     return callback()
   }
 
-  getVersion() {
-    return this.version
+  getVersion(callback) {
+    return callback(null, this.version)
   }
-  getVersionData() {
-    return this.versionData
+  getVersionData(callback) {
+    return callback(null, this.versionData)
   }
   refreshVersions(callback) {
     callback(null, this.version)
   }
-  setVersionData(version, versionData) {
+  setVersionData(version, versionData, callback) {
     this.version = version
     this.versionData = versionData
+    return callback()
   }
 }
 module.exports = Store

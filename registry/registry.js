@@ -1,7 +1,9 @@
 const express = require('express')
 const fs = require('fs')
-const MemoryStore = require('./store/memory')
-const FileStore = require('./store/files')
+const stores = {
+  memory: require('./store/memory').create(),
+  files: require('./store/files').create()
+}
 const { Roles, Client } = require('../shared/main')
 
 const app = express()
@@ -18,41 +20,48 @@ app.get('/register', (req, res) => {
   let address = req.query.address
   let settings = app.get('settings')
   let now = Date.now()
-  let end = now + store.getLeaseDurationInMillis(role)
+  store.getLeaseDurationInMillis(role, (err, duration) => {
+    if (err) return res.send(err)
+    let end = now + duration
+    store.addIpAddressLease(role, address, end, (err) => {
+      if (err) return res.send(err)
+      var index = ""
+      store.each((lease) => {
+        if (lease.when > now) {
+          if (index.length > 0) {
+            index += ',\n'
+          }
+          index += `"${lease.role}":"${lease.address}"`
+        }
+      }, (err) => {
+        if (err) return res.send(err)
+        res.setHeader('Content-Type', 'application/json')
+        res.setHeader('X-Lease-Expiry', end)
 
-  store.addIpAddressLease(role, address, end)
-  var index = ""
-  store.each((lease) => {
-    if (lease.when > now) {
-      if (index.length > 0) {
-        index += ',\n'
-      }
-      index += `"${lease.role}":"${lease.address}"`
-    }
+        let registry = settings.self
+        store.getVersion((err, version) => {
+          if (err) {
+            return res.send(err)
+          }
+          store.getVersionData((err, versionData) => {
+            if (err) {
+              return res.send(err)
+            }
+            let response = `{
+              "version": ${version},
+              "role": "${role}",
+              "registry": "${registry}",
+              "script": ${versionData.scripts[role + '.sh'] || null},
+              "addresses": {
+                ${index}
+              }
+            }`
+            return res.send(response)
+          })
+        })
+      })
+    })
   })
-  res.setHeader('Content-Type', 'application/json')
-  res.setHeader('X-Lease-Expiry', end)
-
-  let server = settings.getSelf()
-  if (!settings.registry) {
-    let mirror = store.getAddress(Roles.MIRROR)
-    if (mirror) {
-      server = `${mirror}`
-    }
-  }
-
-  let version = store.getVersion()
-  let versionData = store.getVersionData()
-  let response = `{
-    "version": ${version},
-    "role": "${role}",
-    "server": "${server}",
-    "script": "${versionData[version].scripts[role + '.sh'] || null}",
-    "addresses": {
-      ${index}
-    }
-  }`
-  res.send(response)
 })
 
 app.get('/deregister', (req, res) => {
@@ -67,10 +76,11 @@ app.get('/lookup', (req, res) => {
   let role = req.query.role
   let now = Date.now()
   var ret = `E no address found for ${role}`
+  res.setHeader('Content-Type', 'text/plain')
   if (role) {
     let address = store.getAddress(role, now)
     if (address) {
-      ret = `OK ${address}`
+      return res.send(`OK ${address}`)
     }
   } else {
     var n = 0;
@@ -78,17 +88,18 @@ app.get('/lookup', (req, res) => {
       if (lease.when >= now) {
         ++n
       }
+    }, (err) => {
+      return res.send(`N ${n}`)
     })
-    ret = `N ${n}`
   }
-  res.setHeader('Content-Type', 'text/plain')
-  res.send(ret)
 })
 
 app.get('/status', (req, res) => {
   let duration = req.query.duration
   if (duration) {
-    store.setLeaseDurationInMillis(duration)
+    store.setLeaseDurationInMillis(duration, (err) => {
+      // don't need to wait for this. Maybe it should really be on its own endpoint?
+    })
   }
 
   let now = Date.now()
@@ -105,10 +116,14 @@ app.get('/status', (req, res) => {
     ret += "</td>\n"
     ret += `<td><a href='#' onclick='remove("${lease.role}", "output-${lease.role}")'>remove</a> <span id="output-${lease.role}"></span></td>`
     ret += "</tr>\n"
+  }, (err) => {
+    store.getLeaseDurationInMillis('OTHER', (err, duration) => {
+      if (err) return res.send(err)
+      ret += `</table><i>Lease duration: ${duration} milliseconds</i>`
+      res.setHeader('Content-Type', 'text/html')
+      res.send(ret)
+    })
   })
-  ret += `</table><i>Lease duration: ${store.getLeaseDurationInMillis('OTHER')} milliseconds</i>`
-  res.setHeader('Content-Type', 'text/html')
-  res.send(ret)
 })
 
 app.get('/refresh', (req, res) => {
@@ -141,26 +156,25 @@ app.use(express.static('static'))
 function init(client, _store, cb) {
   client.ensure((settings) => {
     app.set('settings', settings)
-    store = _store || new FileStore('leases.txt')
+    store = _store || stores[settings.store]
     store.refreshVersions((err, version) => {
       cb(err, app, version)
     })
   })
 }
 
-const client = new Client(Roles.REGISTRY, 3001)
+const client = new Client({ role: Roles.REGISTRY, port: 3001, store: 'files' })
 client.ensure((settings) => {
   init(client, null, (err, app) => {
     if (err) throw err
     let settings = app.get('settings')
-    console.log(`about to listen on port ${settings.port}`)
     // throw new Error("yikes")
     app.listen(settings.port, () => {
       if (settings.registry) {
         client.register(settings.registry, settings.role, true)
-        console.log(`Central Server Mirror listening on port ${settings.port}`)
+        console.log(`* Registroy (Mirror) listening on ${settings.self}`)
       } else {
-        console.log(`Central Server Primary listening on port ${settings.port}`)
+        console.log(`* Registry (Primary) listening on ${settings.self}`)
       }
     })
   })

@@ -91,7 +91,6 @@ const Client = class {
                         }
                         let now = Date.now()
                         let lease = expiry - now - 10;
-                        console.log(`got lease of ${lease} ms for host ${host}`)
                         setTimeout(() => {
                             return this.register(host, role, keepalive)
                         }, lease)
@@ -103,7 +102,6 @@ const Client = class {
                     } else {
                         throw (err)
                     }
-                    console.log(`error: ${err}\ntext: ${text}`)
                 }
             })
         })
