@@ -3,7 +3,7 @@
     "express": "^4.17.1"
   },
   "scripts": {
-    "start": "node start.js"
+    "start": "node registry.js"
   },
   "name": "registry",
   "version": "1.0.0",

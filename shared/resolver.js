@@ -20,19 +20,19 @@ const Resolver = class {
                 }
                 return this.resolve(address, cb)
             })
-            return
+        } else {
+            let protocol = https
+            if (!host.startsWith('http')) {
+                host = 'https://' + host
+            }
+            if (host.startsWith('http://')) {
+                protocol = http
+            }
+            if (!host.endsWith('/')) {
+                host = host + '/'
+            }
+            cb(null, host, protocol)
         }
-        let protocol = https
-        if (!host.startsWith('http')) {
-            host = 'https://' + host
-        }
-        if (host.startsWith('http://')) {
-            protocol = http
-        }
-        if (!host.endsWith('/')) {
-            host = host + '/'
-        }
-        cb(null, host, protocol)
     }
 }
 

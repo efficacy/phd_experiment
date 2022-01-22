@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://bitbucket.org/efficacystudy/shared/issues"
   },
-  "homepage": "https://bitbucket.org/efficacystudy/shared#readme"
+  "homepage": "https://bitbucket.org/efficacystudy/shared#readme",
+  "dependencies": {
+    "yargs": "^17.3.1"
+  }
 }

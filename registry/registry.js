@@ -2,41 +2,11 @@ const express = require('express')
 const fs = require('fs')
 const MemoryStore = require('./store/memory')
 const FileStore = require('./store/files')
-const { Client } = require('../shared')
+const { Roles, Client } = require('../shared/main')
 
 const app = express()
 
-let port = null
-let primary = null
-var args = process.argv.slice(2);
-if (args.length > 0) {
-  port = parseInt(args[0])
-}
-if (args.length > 1) {
-  primary = args[1]
-}
-port = port || normalizePort(process.env.PORT || '3001');
-
 let store = null
-const MIRROR = 'MIRROR'
-
-let client = new Client('192.168.1.1', port)
-
-function normalizePort(val) {
-  var port = parseInt(val, 10);
-
-  if (isNaN(port)) {
-    // named pipe
-    return val;
-  }
-
-  if (port >= 0) {
-    // port number
-    return port;
-  }
-
-  return false;
-}
 
 app.get('/selfcheck', (req, res) => {
   res.setHeader('Content-Type', 'text/plain')
@@ -46,6 +16,7 @@ app.get('/selfcheck', (req, res) => {
 app.get('/register', (req, res) => {
   let role = req.query.role
   let address = req.query.address
+  let settings = app.get('settings')
   let now = Date.now()
   let end = now + store.getLeaseDurationInMillis(role)
 
@@ -62,9 +33,9 @@ app.get('/register', (req, res) => {
   res.setHeader('Content-Type', 'application/json')
   res.setHeader('X-Lease-Expiry', end)
 
-  let server = client.getSelf()
-  if (role != MIRROR) {
-    let mirror = store.getAddress(MIRROR)
+  let server = settings.getSelf()
+  if (!settings.registry) {
+    let mirror = store.getAddress(Roles.MIRROR)
     if (mirror) {
       server = `${mirror}`
     }
@@ -167,13 +138,30 @@ app.get('/clear', (req, res) => {
 
 app.use(express.static('static'))
 
-function init(_store, cb) {
-  store = _store || new FileStore('leases.txt')
-  store.refreshVersions((err, version) => {
-    cb(err, app, port, primary, version)
+function init(client, _store, cb) {
+  client.ensure((settings) => {
+    app.set('settings', settings)
+    store = _store || new FileStore('leases.txt')
+    store.refreshVersions((err, version) => {
+      cb(err, app, version)
+    })
   })
 }
 
-module.exports = {
-  init: init
-}
+const client = new Client(Roles.REGISTRY, 3001)
+client.ensure((settings) => {
+  init(client, null, (err, app) => {
+    if (err) throw err
+    let settings = app.get('settings')
+    console.log(`about to listen on port ${settings.port}`)
+    // throw new Error("yikes")
+    app.listen(settings.port, () => {
+      if (settings.registry) {
+        client.register(settings.registry, settings.role, true)
+        console.log(`Central Server Mirror listening on port ${settings.port}`)
+      } else {
+        console.log(`Central Server Primary listening on port ${settings.port}`)
+      }
+    })
+  })
+})
