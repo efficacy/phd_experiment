@@ -44,7 +44,7 @@ const Settings = class {
             })
             .option('store', {
                 alias: 's',
-                description: 'type of store to use for persistence (memory,files,mysql,pg)',
+                description: 'type of store to use for persistence (memory,files,mysql,postgres)',
                 type: 'string'
             })
             .help()
@@ -61,7 +61,7 @@ const Settings = class {
     init(callback) {
         this.initialised = true
         if (!this.settings.address) {
-            findIp(this.settings.registry || this.settings.beacon, (ip) => {
+            findIp(this.settings.beacon, (ip) => {
                 this.settings.address = ip
                 this.settings.self = `${this.settings.address}:${this.settings.port}`
                 // console.log(`settings: ${JSON.stringify(this.settings)}`)

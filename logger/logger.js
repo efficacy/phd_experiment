@@ -1,60 +1,21 @@
 const express = require('express')
-const memstore = require('./logstore-memory')
-const mysqlstore = require('./logstore-mysql')
-const pgsqlstore = require('./logstore-postgres')
-const {Client} = require('../shared')
+const { Roles, Client } = require('../shared/main')
+const stores = {
+  // memory: require('./store/memory').create(),
+  // mysql: require('./store/mysql').create(),
+  postgres: require('./store/postgres').create()
+}
 
+const client = new Client({ role: Roles.LOGGER, port: 3002, store: 'postgres' })
 const app = express()
-
-let port = null
-let primary = null
-var args = process.argv.slice(2);
-if (args.length > 0) {
-  port = parseInt(args[0])
-}
-if (args.length > 1) {
-  primary = args[1]
-}
-port = port || normalizePort(process.env.PORT || '3002');
-
-let store;
-switch(process.env.STORE) {
-  case 'memory':
-    store = memstore;
-    break;
-  case 'mysql':
-    store = mysqlstore;
-    break;
-  case 'pg':
-  default:
-    store = pgsqlstore;
-}
-
-let client = new Client('192.168.1.1', port)
-
-function normalizePort(val) {
-  var port = parseInt(val, 10);
-
-  if (isNaN(port)) {
-    // named pipe
-    return val;
-  }
-
-  if (port >= 0) {
-    // port number
-    return port;
-  }
-
-  return false;
-}
 
 app.get('/status', (req, res) => {
   store.status((err, session, count) => {
     res.setHeader('Content-Type', 'text/plain')
     if (err) {
-      res.send(JSON.stringify({'error': err}))
+      res.send(JSON.stringify({ 'error': err }))
     } else {
-      let status = JSON.stringify({'session': session, 'count': count})
+      let status = JSON.stringify({ 'session': session, 'count': count })
       res.send(status)
     }
   })
@@ -92,13 +53,18 @@ app.get('/log', (req, res) => {
 })
 
 app.use(express.static('static'))
+console.log(`logger about to get settings`)
 
-store.start((err) => {
-  console.log(`Database initialisation: ${err}`)
-  app.listen(port, () => {
-    if (primary) {
-      client.register(primary, 'LOGGER', true)
-    }
-    console.log(`Experiment Logger listening on port ${port}`)
+client.ensure((settings) => {
+  app.set('settings', settings)
+  store = stores[settings.store]
+  store.start((err) => {
+    console.log(`Database initialisation: ${err}`)
+    app.listen(settings.port, () => {
+      client.register(settings.role, true, (err) => {
+        if (err) throw err
+        console.log(`* Logger listening on port ${settings.self}`)
+      })
+    })
   })
 })

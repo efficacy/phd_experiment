@@ -1,13 +1,13 @@
 const express = require('express')
 const fs = require('fs')
+const { Roles, Client } = require('../shared/main')
 const stores = {
   memory: require('./store/memory').create(),
   files: require('./store/files').create()
 }
-const { Roles, Client } = require('../shared/main')
 
+const client = new Client({ role: Roles.REGISTRY, port: 3001, store: 'files' })
 const app = express()
-
 let store = null
 
 app.get('/selfcheck', (req, res) => {
@@ -153,26 +153,18 @@ app.get('/clear', (req, res) => {
 
 app.use(express.static('static'))
 
-function init(client, _store, cb) {
-  client.ensure((settings) => {
-    app.set('settings', settings)
-    store = _store || stores[settings.store]
-    store.refreshVersions((err, version) => {
-      cb(err, app, version)
-    })
-  })
-}
-
-const client = new Client({ role: Roles.REGISTRY, port: 3001, store: 'files' })
 client.ensure((settings) => {
-  init(client, null, (err, app) => {
+  app.set('settings', settings)
+  store = stores[settings.store]
+  store.refreshVersions((err, version) => {
     if (err) throw err
-    let settings = app.get('settings')
     // throw new Error("yikes")
     app.listen(settings.port, () => {
-      if (settings.registry) {
-        client.register(settings.registry, settings.role, true)
-        console.log(`* Registroy (Mirror) listening on ${settings.self}`)
+      if (settings.role == Roles.MIRROR) {
+        client.register(settings.role, true, (err) => {
+          if (err) throw err
+          console.log(`* Registroy (Mirror) listening on ${settings.self}`)
+        })
       } else {
         console.log(`* Registry (Primary) listening on ${settings.self}`)
       }

@@ -6,42 +6,26 @@ const Client = class {
     constructor(role, port) {
         this._settings = new Settings(role, port)
         this.config = { addresses: {} }
-        this.resolver = new Resolver(this.lookup)
+        this.resolver = new Resolver(this._lookup)
         this.resolved = {}
     }
     ensure(callback) {
         this._settings.ensure(callback)
     }
-    getSelf(callback) {
-        this.ensure((settings) => {
-            callback(`${settings.address}:${settings.port}`)
-        })
-    }
-    get(host, protocol, action, params, callback) {
-        this.ensure((settings) => {
-            protocol.get(`${host}${action}?${params}`, (res) => {
-                let text = ''
-                res.on('data', d => {
-                    text += d
-                })
-                res.on('end', () => {
-                    callback(null, res.headers, text)
-                })
-            }).on("error", (err) => {
-                callback(err)
-            })
-        })
-    }
     call(action, params, callback) {
         this.ensure((settings)=>{
             let host = settings.registry
+            console.log(`about to call host=${host}`)
             if (host in this.resolved) {
-                return this.get(this.resolved[host].host, this.resolved[host].protocol, action, params, callback)
+                console.log(`host is already resolved`)
+                return this._get(this.resolved[host].host, this.resolved[host].protocol, action, params, callback)
             }
+            console.log(`host is not already resolved`)
             this.resolver.resolve(host, (err, host, protocol) => {
+                console.log(`resolved -> host=${host} protocol=${protocol}`)
                 if (err) throw err
                 this.resolved[host] = { host: host, protocol: protocol }
-                return this.get(host, protocol, action, params, callback)
+                return this._get(host, protocol, action, params, callback)
             })
         })
     }
@@ -52,26 +36,39 @@ const Client = class {
             })
         })
     }
-    lookup(role, callback) {
-        this.ensure((settings)=>{
-            if (!this.config) {
-                return callback('registration config missing')
-            }
-            if (role in this.config.addresses) {
-                return callback(null, this.config.addresses[role])
-            }
-            this.call('lookup', `role=${role}`, (err, headers, text) => {
-                if (err) {
-                    return callback(err)
-                }
-                if (text.startsWith('OK ')) {
-                    return callback(null, text.substring(3))
-                }
-                callback(text)
+    _get(host, protocol, action, params, callback) {
+        console.log(`get(${host},${protocol},${action},${params},${callback})`)
+        protocol.get(`${host}${action}?${params}`, (res) => {
+            let text = ''
+            res.on('data', d => {
+                text += d
             })
+            res.on('end', () => {
+                callback(null, res.headers, text)
+            })
+        }).on("error", (err) => {
+            callback(err)
+        })
+    }
+    _lookup(role, callback) {
+        if (!this.config) {
+            return callback('registration config missing')
+        }
+        if (role in this.config.addresses) {
+            return callback(null, this.config.addresses[role])
+        }
+        this.call('lookup', `role=${role}`, (err, headers, text) => {
+            if (err) {
+                return callback(err)
+            }
+            if (text.startsWith('OK ')) {
+                return callback(null, text.substring(3))
+            }
+            callback(text)
         })
     }
     register(role, keepalive, callback) {
+        console.log(`register(${role}, ${keepalive}, ${callback})`)
         this.ensure((settings)=>{
             this.call('register', `role=${role}&address=${settings.address}:${settings.port}`, (err, headers, text) => {
                 if (err) {
