@@ -79,6 +79,17 @@ const Settings = class {
         }
         return this.init(callback)
     }
+    calculateSelf() {
+        this.settings.self = `${this.settings.address}:${this.settings.port}`
+    }
+    setAddress(_address) {
+        this.settings.address = _address
+        this.calculateSelf()
+    }
+    setPort(_port) {
+        this.settings.port = _port
+        this.calculateSelf()
+    }
 }
 
 module.exports = Settings

@@ -1,34 +1,23 @@
 const test = require('tape')
-const server = require('../registry/server.js')
+const registry = require('../registry/registry.js')
 const Client = require('../shared/client.js')
 const MemoryStore = require('../registry/store/memory.js')
 
-const beacon = '192.168.1.1'
 let store = new MemoryStore()
 
 let service = null
+let settings = null
 let registry_url = null
 
 function start_registry(cb) {
-    server.init(store, (err, app, port) => {
+    registry.init(store, (err, app, _settings) => {
+        settings = _settings
         if (err) throw err
-        service = app.listen(port, () => {
-            registry_url = `http://localhost:${port}`
-            console.log(`Test Registry listening on port ${port}`)
+        service = app.listen(settings.port, () => {
+            registry_url = `http://${settings.self}`
+            console.log(`Test Registry listening on port ${settings.self}`)
             return cb()
         })
-    })
-}
-
-function ensure(port, callback) {
-    Client.findIp(beacon, () => {
-        if (null != service) {
-            return callback(new Client(port, registry_url))
-        } else {
-            start_registry(() => {
-                callback(new Client(port, registry_url))
-            })
-        }
     })
 }
 
@@ -38,6 +27,16 @@ function stop_registry(cb) {
         registry_port = null
         cb()
     })
+}
+
+function ensure(port, callback) {
+    if (null != service) {
+        return callback(new Client(port, registry_url))
+    } else {
+        start_registry(() => {
+            callback(new Client(port, registry_url))
+        })
+    }
 }
 
 test('registry is running', (t) => {

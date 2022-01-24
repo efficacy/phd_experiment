@@ -1,5 +1,6 @@
 const express = require('express')
 const fs = require('fs')
+const { inherits } = require('util')
 const { Roles, Client } = require('../shared/main')
 const stores = {
   memory: require('./store/memory').create(),
@@ -153,21 +154,40 @@ app.get('/clear', (req, res) => {
 
 app.use(express.static('static'))
 
-client.ensure((settings) => {
-  app.set('settings', settings)
-  store = stores[settings.store]
-  store.refreshVersions((err, version) => {
-    if (err) throw err
-    // throw new Error("yikes")
-    app.listen(settings.port, () => {
-      if (settings.role == Roles.MIRROR) {
-        client.register(settings.role, true, (err) => {
-          if (err) throw err
-          console.log(`* Registroy (Mirror) listening on ${settings.self}`)
-        })
-      } else {
-        console.log(`* Registry (Primary) listening on ${settings.self}`)
-      }
+function init(store, callback) {
+  client.ensure((settings) => {
+    app.set('settings', settings)
+    store = store || stores[settings.store]
+    store.refreshVersions((err, version) => {
+      if (callback) return callback(err, app, settings)
     })
   })
-})
+}
+
+function listen(app, settings, port, callback) {
+  if (port) settings.setPort(port)
+  app.listen(settings.port, () => {
+    if (settings.role == Roles.MIRROR) {
+      client.register(settings.role, true, (err) => {
+        if (callback) return callback(err, app, settings)
+        if (err) throw err
+        console.log(`* Registroy (Mirror) listening on ${settings.self}`)
+      })
+    } else {
+      if (callback) return callback(err, app, settings)
+      console.log(`* Registry (Primary) listening on ${settings.self}`)
+    }
+  })
+}
+
+if (require.main === module) {
+  init(null, (err, app, settings) => {
+    if (err) throw err
+    listen(app, settings)
+  })
+}
+
+module.exports = {
+  init: init,
+  listen: listen
+}
