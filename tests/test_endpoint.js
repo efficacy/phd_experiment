@@ -15,42 +15,42 @@ test('specify default protocol', (t) => {
 
 test('all defaults', (t) => {
     let e = new Endpoint()
-    t.equal(e.expand(''), 'http://localhost:80/', 'all default defaults')
+    t.equal(e.toURL(''), 'http://localhost:80/', 'all default defaults')
     t.end()
 })
 
 test('ip address', (t) => {
     let e = new Endpoint()
-    t.equal(e.expand('1.2.3.4'), 'http://1.2.3.4:80/', 'ip address as host')
+    t.equal(e.toURL('1.2.3.4'), 'http://1.2.3.4:80/', 'ip address as host')
     t.end()
 })
 
 test('ip address with port', (t) => {
     let e = new Endpoint()
-    t.equal(e.expand('1.2.3.4:995'), 'http://1.2.3.4:995/', 'ip address with port')
+    t.equal(e.toURL('1.2.3.4:995'), 'http://1.2.3.4:995/', 'ip address with port')
     t.end()
 })
 
 test('ip address with protocol and port', (t) => {
     let e = new Endpoint()
-    t.equal(e.expand('banana://1.2.3.4:995'), 'banana://1.2.3.4:995/', 'ip address with protocol and port')
+    t.equal(e.toURL('banana://1.2.3.4:995'), 'banana://1.2.3.4:995/', 'ip address with protocol and port')
     t.end()
 })
 
 test('hostname', (t) => {
     let e = new Endpoint()
-    t.equal(e.expand('uos.ac.uk'), 'http://uos.ac.uk:80/', 'domain name as host')
+    t.equal(e.toURL('uos.ac.uk'), 'http://uos.ac.uk:80/', 'domain name as host')
     t.end()
 })
 
 test('unrecognised role', (t) => {
     let e = new Endpoint()
-    t.equal(e.expand('logger'), 'http://localhost:80/', 'unrecognised role')
+    t.equal(e.toURL('logger'), 'http://localhost:80/', 'unrecognised role')
     t.end()
 })
 
 test('recognised role', (t) => {
     let e = new Endpoint({}, (role)=>{return '1.2.3.4'})
-    t.equal(e.expand('logger'), 'http://1.2.3.4:80/', 'recognised role')
+    t.equal(e.toURL('logger'), 'http://1.2.3.4:80/', 'recognised role')
     t.end()
 })

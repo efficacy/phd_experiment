@@ -69,9 +69,20 @@ const Endpoint = class {
         return spec
     }
 
+    fill(spec) {
+        return this.applyDefaults(spec)
+    }
+
     expand(s) {
-        let spec = this.parse(s)
-        spec = this.applyDefaults(spec)
+        let spec = s
+        if (typeof s == 'string') {
+            spec = this.parse(s)
+        }
+        return this.fill(spec)
+    }
+
+    toURL(s) {
+        let spec = this.expand(s)
         return `${spec.protocol}://${spec.host}:${spec.port}/`
     }
 }
