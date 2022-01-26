@@ -11,9 +11,10 @@ function findIp(beacon, callback) {
     })
 }
 
-const Settings = class {
+const Config = class {
     constructor(defaults) {
         defaults = defaults || {}
+        console.log(`Config constructor defaults = ${JSON.stringify(defaults)}`)
         this.settings = {}
 
         let argv = yargs
@@ -63,13 +64,12 @@ const Settings = class {
         if (!this.settings.address) {
             findIp(this.settings.beacon, (ip) => {
                 this.settings.address = ip
-                this.settings.self = `${this.settings.address}:${this.settings.port}`
-                // console.log(`settings: ${JSON.stringify(this.settings)}`)
+                console.log(`settings init: ${JSON.stringify(this.settings)}`)
                 callback(this.settings)
             })
         } else {
             this.settings.self = `${this.settings.address}:${this.settings.port}`
-            // console.log(`settings: ${JSON.stringify(this.settings)}`)
+            console.log(`settings init: ${JSON.stringify(this.settings)}`)
             callback(this.settings)
         }
     }
@@ -79,17 +79,9 @@ const Settings = class {
         }
         return this.init(callback)
     }
-    calculateSelf() {
-        this.settings.self = `${this.settings.address}:${this.settings.port}`
-    }
-    setAddress(_address) {
-        this.settings.address = _address
-        this.calculateSelf()
-    }
-    setPort(_port) {
-        this.settings.port = _port
-        this.calculateSelf()
+    static toURL(settings) {
+        return `${settings.protocol||'http'}://${settings.address}:${settings.port}`
     }
 }
 
-module.exports = Settings
+module.exports = Config

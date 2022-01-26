@@ -1,13 +1,12 @@
 const express = require('express')
 const fs = require('fs')
 const { inherits } = require('util')
-const { Roles, Client } = require('../shared/main')
+const { Roles, Config } = require('../shared/main')
 const stores = {
   memory: require('./store/memory').create(),
   files: require('./store/files').create()
 }
 
-const client = new Client({ role: Roles.REGISTRY, port: 3001, store: 'files' })
 const app = express()
 let store = null
 
@@ -154,8 +153,10 @@ app.get('/clear', (req, res) => {
 
 app.use(express.static('static'))
 
-function init(store, callback) {
-  client.ensure((settings) => {
+function init(store, port, callback) {
+  let config = new Config({port: port})
+  config.ensure((settings) => {
+    console.log(`registry init settings=${JSON.stringify(settings)}`)
     app.set('settings', settings)
     store = store || stores[settings.store]
     store.refreshVersions((err, version) => {
@@ -164,20 +165,13 @@ function init(store, callback) {
   })
 }
 
-function listen(app, settings, port, callback) {
-  if (port) settings.setPort(port)
-  app.listen(settings.port, () => {
-    if (settings.role == Roles.MIRROR) {
-      client.register(settings.role, true, (err) => {
-        if (callback) return callback(err, app, settings)
-        if (err) throw err
-        console.log(`* Registroy (Mirror) listening on ${settings.self}`)
-      })
-    } else {
-      if (callback) return callback(err, app, settings)
-      console.log(`* Registry (Primary) listening on ${settings.self}`)
-    }
+function listen(app, settings, callback) {
+  console.log(`registry listen settings=${JSON.stringify(settings)}`)
+  let ret = app.listen(settings.port, () => {
+    console.log(`* Registry (Primary) listening on ${Config.toURL(settings)}`)
+    if (callback) return callback(null, app, settings)
   })
+  return ret
 }
 
 if (require.main === module) {

@@ -6,10 +6,9 @@ const Requester = class {
     constructor(roles, defaults) {
         this.roles = roles || {}
         this.endpoint = new Endpoint(defaults).setRoles(this.roles)
-        console.log(`Requester setup this=${this} roles=${this.roles}`)
     }
-    setRole(name, address, port) {
-        this.roles[name] = {address: address, port: port}
+    setRole(name, listener) {
+        this.roles[name] = listener
     }
     call(destination, action, params, callback) {
         let spec = this.endpoint.expand(destination)
@@ -22,7 +21,7 @@ const Requester = class {
                 text += d
             })
             res.on('end', () => {
-                callback(null, res.headers, text)
+                callback(null, text, res.headers)
             })
         }).on("error", (err) => {
             callback(err)

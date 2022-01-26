@@ -1,6 +1,17 @@
 const https = require('https')
 const http = require('http')
 
+function getHost(value, dfl) {
+    if (!value) return dfl
+    let parts = value.split(':')
+    return (parts && parts[0]) || dfl
+}
+
+function getPort(value, dfl) {
+    if (!value) return dfl
+    let parts = value.split(':')
+    return (parts && parts[1]) || dfl
+}
 const Endpoint = class {
     constructor(defaults) {
         this.defaults = defaults || {}
@@ -13,13 +24,12 @@ const Endpoint = class {
 
     setRoles(roles) {
         this.roles = roles || {}
-        console.log(`endpoint setLookup: lookup= ${JSON.stringify(this.roles)}`)
         return this
     }
 
     findRole(role) {
         let ret = this.roles[role]
-        console.log(`find role ${role} => ${ret}`)
+        console.log(`find role ${role} => ${JSON.stringify(ret)}`)
         return ret
     }
 
@@ -87,8 +97,11 @@ const Endpoint = class {
             let match = host.match(/^[A-Za-z][A-Za-z0-9]+$/)
             if (match) {
                 let role = match[0]
-                spec.host = this.findRole(role)
-                console.log(`host is a role: ${host}=>${spec.host}`)
+                let found = this.findRole(role)
+                console.log(`endpoint.expand found=${JSON.stringify(found)}`)
+                spec.host = getHost(found, 'localhost')
+                spec.port = getPort(found, '80')
+                console.log(`host is a role: ${role}=>${spec.host}:${spec.port}`)
                 spec = this.applyDefaults(spec)
             }
         }
