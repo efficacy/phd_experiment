@@ -1,14 +1,26 @@
-function unknown(s) {
-    return null
-}
+const https = require('https')
+const http = require('http')
 
 const Endpoint = class {
-    constructor(defaults, lookup) {
+    constructor(defaults) {
         this.defaults = defaults || {}
         this.defaults.protocol = this.defaults.protocol || 'http'
         this.defaults.port = this.defaults.port || 80
         this.defaults.host = this.defaults.host || 'localhost'
-        this.lookup = lookup || unknown
+        this.roles = {}
+        return this
+    }
+
+    setRoles(roles) {
+        this.roles = roles || {}
+        console.log(`endpoint setLookup: lookup= ${JSON.stringify(this.roles)}`)
+        return this
+    }
+
+    findRole(role) {
+        let ret = this.roles[role]
+        console.log(`find role ${role} => ${ret}`)
+        return ret
     }
 
     applyDefaults(spec) {
@@ -27,7 +39,6 @@ const Endpoint = class {
             console.log(`protocol match: [${match}]`)
             spec.protocol = match[1]
             s = s.substring(match[0].length)
-            console.log(`after protocol, s=${s}`)
         }
         
         // ip address
@@ -36,25 +47,13 @@ const Endpoint = class {
             console.log(`ip match: [${match}]`)
             spec.host = match[0]
             s = s.substring(match[0].length)
-            console.log(`after ip address, s=${s}`)
         } else {
             // domain name
-            match = s.match(/^[A-Za-z][a-z0-9]+(\.[A-Za-z0-9]+)+/)
+            match = s.match(/^[A-Za-z][A-Za-z0-9.]+/)
             if (match) {
                 console.log(`hostname match: [${match}]`)
                 spec.host = match[0]
                 s = s.substring(match[0].length)
-                console.log(`after hostmane, s=${s}`)
-            } else {
-                // role name
-                match = s.match(/^[A-Za-z][a-z0-9]+/)
-                if (match) {
-                    console.log(`roleame match: [${match}]`)
-                    let role = match[0]
-                    spec.host = this.lookup(role)
-                    s = s.substring(match[0].length)
-                    console.log(`after rolemane, s=${s}`)
-                }
             }
         }
         // port
@@ -63,7 +62,6 @@ const Endpoint = class {
             console.log(`port match: [${match}]`)
             spec.port = match[1]
             s = s.substring(match[0].length)
-            console.log(`after port, s=${s}`)
         }
 
         return spec
@@ -78,12 +76,37 @@ const Endpoint = class {
         if (typeof s == 'string') {
             spec = this.parse(s)
         }
-        return this.fill(spec)
+        if (spec.expanded) {
+            return spec
+        }
+
+        spec = this.fill(spec)
+
+        let host = spec.host
+        if (host != 'localhost') {
+            let match = host.match(/^[A-Za-z][A-Za-z0-9]+$/)
+            if (match) {
+                let role = match[0]
+                spec.host = this.findRole(role)
+                console.log(`host is a role: ${host}=>${spec.host}`)
+                spec = this.applyDefaults(spec)
+            }
+        }
+
+        if (spec.protocol == 'http' || !spec.protocol) {
+            spec.caller = http
+        } else if (spec.protocol == 'https') {
+            spec.caller = https
+        }
+
+        spec.url = `${spec.protocol}://${spec.host}:${spec.port}/`
+        spec.expanded = true
+        return spec
     }
 
     toURL(s) {
         let spec = this.expand(s)
-        return `${spec.protocol}://${spec.host}:${spec.port}/`
+        return spec.url
     }
 }
 

@@ -50,7 +50,7 @@ test('unrecognised role', (t) => {
 })
 
 test('recognised role', (t) => {
-    let e = new Endpoint({}, (role)=>{return '1.2.3.4'})
+    let e = new Endpoint().setRoles({logger: '1.2.3.4'})
     t.equal(e.toURL('logger'), 'http://1.2.3.4:80/', 'recognised role')
     t.end()
 })
