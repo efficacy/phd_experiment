@@ -7,6 +7,7 @@ function findIp(beacon, callback) {
         host: beacon
     }, () => {
         let ip = client.localAddress
+        console.log(`found my ip: ${ip}`)
         callback(ip)
     })
 }
@@ -18,9 +19,9 @@ const Config = class {
         this.settings = {}
 
         let argv = yargs
-            .option('address', {
+            .option('host', {
                 alias: 'a',
-                description: 'IP address of this service',
+                description: 'IP host or hostname of this service',
                 type: 'string'
             })
             .option('port', {
@@ -40,7 +41,7 @@ const Config = class {
             })
             .option('beacon', {
                 alias: 'b',
-                description: 'IP address to connect to to work out my IP address',
+                description: 'host to connect to to work out my IP address',
                 type: 'string'
             })
             .option('store', {
@@ -51,7 +52,7 @@ const Config = class {
             .help()
             .alias('help', 'h').argv
 
-        this.settings.address = argv.address || process.env.ADDRESS || defaults.address
+        this.settings.host = argv.host || process.env.host || defaults.host
         this.settings.port = argv.port || process.env.PORT || defaults.port
         this.settings.role = argv.role || process.env.ROLE || defaults.role
         this.settings.registry = argv.registry || process.env.REGISTRY || defaults.registry
@@ -61,14 +62,14 @@ const Config = class {
     }
     init(callback) {
         this.initialised = true
-        if (!this.settings.address) {
+        console.log(`settings init beforr find ip: ${JSON.stringify(this.settings)}`)
+        if (!this.settings.host) {
             findIp(this.settings.beacon, (ip) => {
-                this.settings.address = ip
+                this.settings.host = ip
                 console.log(`settings init: ${JSON.stringify(this.settings)}`)
                 callback(this.settings)
             })
         } else {
-            this.settings.self = `${this.settings.address}:${this.settings.port}`
             console.log(`settings init: ${JSON.stringify(this.settings)}`)
             callback(this.settings)
         }
@@ -80,7 +81,7 @@ const Config = class {
         return this.init(callback)
     }
     static toURL(settings) {
-        return `${settings.protocol||'http'}://${settings.address}:${settings.port}`
+        return `${settings.protocol||'http'}://${settings.host}:${settings.port}`
     }
 }
 

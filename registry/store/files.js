@@ -46,14 +46,14 @@ function getfiles(rootDir, cb) {
   return getfs(rootDir, stat => stat.isFile(), cb)
 }
 
-const Store = class {
+const FileStore = class {
   constructor(filename) {
     this.filename = filename
     this.cache = new MemoryStore()
     this.loaded = false
   }
   static create(filename) {
-    return new Store(filename || 'leases.txt')
+    return new FileStore(filename || 'leases.txt')
   }
 
   addIpAddressLease(role, address, when, callback) {
@@ -213,4 +213,4 @@ const Store = class {
     })
   }
 }
-module.exports = Store
+module.exports = FileStore

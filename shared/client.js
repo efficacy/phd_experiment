@@ -44,57 +44,54 @@ const Client = class {
         })
     }
     callRegistry(action, params, callback) {
-        console.log(`call registry: before ensure, settings=${JSON.stringify(this.settings)}`)
-        this.ensure(Roles.REGISTRY, (err, settings)=>{
-            console.log(`call registry: after ensure, err=${err} settings=${JSON.stringify(settings)}`)
-            if (err) {
-                console.log(`client.callRegistry about to call back with error`)
-                return callback(err)
-            }
-            console.log(`call registry: settings=${JSON.stringify(settings)}`)
-            this.requester.call(Roles.REGISTRY, action, params, (err, text, headers) => {
-                console.log(`client.callRegistry about to call back after requester.call`)
-                callback(err, text, headers)
-            })
+        this.requester.call(Roles.REGISTRY, action, params, (err, text, headers) => {
+            callback(err, text, headers)
         })
     }
     check(callback) {
-        this.callRegistry('selfcheck', '', (err, text) => {
-            console.log(`client.check about to call back`)
-            callback(err, text)
+        this.ensure(Roles.REGISTRY, (err, settings)=>{
+            if (err) {
+                return callback(err)
+            }
+            this.callRegistry('selfcheck', '', (err, text, headers) => {
+                callback(err, text)
+            })
         })
     }
     register(role, keepalive, callback) {
-        this.callRegistry('register', `role=${role}&address=${this.settings.address}:${this.settings.port}`, (err, text, headers) => {
+        this.ensure(Roles.REGISTRY, (err, settings)=>{
             if (err) {
-                if (callback) {
-                    return callback(err)
-                } else {
-                    throw (err)
-                }
+                return callback(err)
             }
-            try {
-                let expiry = parseInt(headers['x-lease-expiry'])
-                let config = JSON.parse(text)
-                if (keepalive) {
-                    if (config) {
-                        host = config.server
-                        this.config = config
+            this.callRegistry('register', `role=${role}&address=${this.settings.host}:${this.settings.port}`, (err, text, headers) => {
+                if (err) {
+                    console.log(`client.register returning error ${err}`)
+                    return callback(err)
+                }
+                try {
+                    console.log(`client.register receieved config ${text}`)
+                    let expiry = parseInt(headers['x-lease-expiry'])
+                    let config = JSON.parse(text)
+                    if (keepalive) {
+                        if (config) {
+                            host = config.server
+                            this.config = config
+                        }
+                        let now = Date.now()
+                        let lease = expiry - now - 10;
+                        setTimeout(() => {
+                            return this.register(host, role, keepalive)
+                        }, lease)
                     }
-                    let now = Date.now()
-                    let lease = expiry - now - 10;
-                    setTimeout(() => {
-                        return this.register(host, role, keepalive)
-                    }, lease)
+                    if (callback) callback(null, expiry, config)
+                } catch (err) {
+                    if (callback) {
+                        return callback(err)
+                    } else {
+                        throw (err)
+                    }
                 }
-                if (callback) callback(null, expiry, config)
-            } catch (err) {
-                if (callback) {
-                    return callback(err)
-                } else {
-                    throw (err)
-                }
-            }
+            })
         })
     }
 }

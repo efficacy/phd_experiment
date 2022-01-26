@@ -19,6 +19,7 @@ app.get('/register', (req, res) => {
   let role = req.query.role
   let address = req.query.address
   let settings = app.get('settings')
+  console.log(`register for role=${role} address=${address} settings=${JSON.stringify(settings)}`)
   let now = Date.now()
   store.getLeaseDurationInMillis(role, (err, duration) => {
     if (err) return res.send(err)
@@ -38,7 +39,7 @@ app.get('/register', (req, res) => {
         res.setHeader('Content-Type', 'application/json')
         res.setHeader('X-Lease-Expiry', end)
 
-        let registry = settings.self
+        let registry = `${settings.host}:${settings.port}`
         store.getVersion((err, version) => {
           if (err) {
             return res.send(err)
@@ -157,6 +158,7 @@ function init(store, port, callback) {
   let config = new Config({port: port})
   config.ensure((settings) => {
     console.log(`registry init settings=${JSON.stringify(settings)}`)
+    console.log(`registry init store=${store.constructor.name}`)
     app.set('settings', settings)
     store = store || stores[settings.store]
     store.refreshVersions((err, version) => {
@@ -175,7 +177,7 @@ function listen(app, settings, callback) {
 }
 
 if (require.main === module) {
-  init(null, (err, app, settings) => {
+  init(stores.memory, (err, app, settings) => {
     if (err) throw err
     listen(app, settings)
   })

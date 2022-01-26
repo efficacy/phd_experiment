@@ -25,7 +25,7 @@ const Store = class {
         return new Store()
     }
     setup(name, callback) {
-        state.session = name
+        this.state.session = name
         if (callback) callback(`OK: ${state.session}`)
     }
     start(callback) {

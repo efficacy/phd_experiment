@@ -1,4 +1,4 @@
-const Store = class {
+const MemoryStore = class {
   constructor() {
     this.leases = {}
     this.duration = 5000
@@ -18,7 +18,7 @@ const Store = class {
     }
   }
   static create() {
-    return new Store()
+    return new MemoryStore()
   }
   addIpAddressLease(role, address, when, callback) {
     this.leases[role] = {
@@ -89,4 +89,4 @@ const Store = class {
     return callback()
   }
 }
-module.exports = Store
+module.exports = MemoryStore
