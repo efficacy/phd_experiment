@@ -1,2 +1,3 @@
-require('./test_resolve')
+require("./test_endpoint")
+require("./test_requester")
 require("./test_registry")

@@ -7,7 +7,6 @@ function findIp(beacon, callback) {
         host: beacon
     }, () => {
         let ip = client.localAddress
-        console.log(`found my ip: ${ip}`)
         callback(ip)
     })
 }
@@ -15,7 +14,6 @@ function findIp(beacon, callback) {
 const Config = class {
     constructor(defaults) {
         defaults = defaults || {}
-        console.log(`Config constructor defaults = ${JSON.stringify(defaults)}`)
         this.settings = {}
 
         let argv = yargs
@@ -62,15 +60,12 @@ const Config = class {
     }
     init(callback) {
         this.initialised = true
-        console.log(`settings init beforr find ip: ${JSON.stringify(this.settings)}`)
         if (!this.settings.host) {
             findIp(this.settings.beacon, (ip) => {
                 this.settings.host = ip
-                console.log(`settings init: ${JSON.stringify(this.settings)}`)
                 callback(this.settings)
             })
         } else {
-            console.log(`settings init: ${JSON.stringify(this.settings)}`)
             callback(this.settings)
         }
     }

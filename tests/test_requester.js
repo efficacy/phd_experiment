@@ -5,24 +5,23 @@ const { Roles } = require('../shared/main.js')
 const Requester = require('../shared/requester.js')
 
 let store = new MemoryStore()
-const dfl_port = 9999
+const dfl_port = 9991
 let service = null
 
 function start_registry(port, cb) {
     registry.init(store, port, (err, app, settings) => {
         if (err) throw err
-        service = app.listen(port, () => {
-            console.log(`Test Registry listening on http://${settings.address}:${settings.port}`)
-            return cb()
+        service = app.listen(settings.port, () => {
+            console.log(`* Test Registry listening on http://${settings.host}:${settings.port}`)
+            return cb(settings.port, service)
         })
     })
 }
 
-function stop_registry(cb) {
+function stop_registry(port, cb) {
     service.close(() => {
         service = null
-        registry_port = null
-        cb()
+        cb(port)
     })
 }
 
@@ -69,9 +68,11 @@ test('request to a role', (t) => {
 })
 
 test.onFinish(() => {
-    console.log('closing registry...')
-    stop_registry(() => {
-        console.log('registry stopped')
-        process.exit(0) // TODO this is a hack. Why does it hang unless I do this?
+    console.log(`* stopping registry on port ${dfl_port}`);
+    stop_registry(dfl_port, (port) => {
+        console.log(`* registry stopped on part ${port}`)
+        if (require.main === module) {
+            process.exit(0) // TODO this is a hack. Why does it hang unless I do this?
+        }
     })
 })

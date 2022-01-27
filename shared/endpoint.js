@@ -29,7 +29,6 @@ const Endpoint = class {
 
     findRole(role) {
         let ret = this.roles[role]
-        console.log(`find role ${role} => ${JSON.stringify(ret)}`)
         return ret
     }
 
@@ -46,7 +45,6 @@ const Endpoint = class {
         // protocol
         let match = s.match(/^([a-z0-9]+):\/\//)
         if (match) {
-            console.log(`protocol match: [${match}]`)
             spec.protocol = match[1]
             s = s.substring(match[0].length)
         }
@@ -54,14 +52,12 @@ const Endpoint = class {
         // ip address
         match = s.match(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}/)
         if (match) {
-            console.log(`ip match: [${match}]`)
             spec.host = match[0]
             s = s.substring(match[0].length)
         } else {
             // domain name
             match = s.match(/^[A-Za-z][A-Za-z0-9.]+/)
             if (match) {
-                console.log(`hostname match: [${match}]`)
                 spec.host = match[0]
                 s = s.substring(match[0].length)
             }
@@ -69,7 +65,6 @@ const Endpoint = class {
         // port
         match = s.match(/^:([0-9]+)/)
         if (match) {
-            console.log(`port match: [${match}]`)
             spec.port = match[1]
             s = s.substring(match[0].length)
         }
@@ -98,10 +93,8 @@ const Endpoint = class {
             if (match) {
                 let role = match[0]
                 let found = this.findRole(role)
-                console.log(`endpoint.expand found=${JSON.stringify(found)}`)
                 spec.host = getHost(found, 'localhost')
                 spec.port = getPort(found, '80')
-                console.log(`host is a role: ${role}=>${spec.host}:${spec.port}`)
                 spec = this.applyDefaults(spec)
             }
         }

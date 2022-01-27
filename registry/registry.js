@@ -8,7 +8,6 @@ const stores = {
 }
 
 const app = express()
-let store = null
 
 app.get('/selfcheck', (req, res) => {
   res.setHeader('Content-Type', 'text/plain')
@@ -19,7 +18,7 @@ app.get('/register', (req, res) => {
   let role = req.query.role
   let address = req.query.address
   let settings = app.get('settings')
-  console.log(`register for role=${role} address=${address} settings=${JSON.stringify(settings)}`)
+  let store = app.get('store')
   let now = Date.now()
   store.getLeaseDurationInMillis(role, (err, duration) => {
     if (err) return res.send(err)
@@ -48,11 +47,17 @@ app.get('/register', (req, res) => {
             if (err) {
               return res.send(err)
             }
+            let script = null
+            if ('scripts' in versionData) {
+              if ((role + '.sh') in versionData.scripts) {
+                script = versionData.scripts[role + '.sh']
+              }
+            }
             let response = `{
               "version": ${version},
               "role": "${role}",
               "registry": "${registry}",
-              "script": ${versionData.scripts[role + '.sh'] || null},
+              "script": ${script},
               "addresses": {
                 ${index}
               }
@@ -67,6 +72,7 @@ app.get('/register', (req, res) => {
 
 app.get('/deregister', (req, res) => {
   let role = req.query.role
+  let store = app.get('store')
 
   store.removeIpAddressLease(role)
   res.setHeader('Content-Type', 'text/plain')
@@ -75,14 +81,19 @@ app.get('/deregister', (req, res) => {
 
 app.get('/lookup', (req, res) => {
   let role = req.query.role
+  let store = app.get('store')
   let now = Date.now()
-  var ret = `E no address found for ${role}`
+  let ret = `E no address found for ${role}`
   res.setHeader('Content-Type', 'text/plain')
   if (role) {
-    let address = store.getAddress(role, now)
-    if (address) {
-      return res.send(`OK ${address}`)
-    }
+    let address = store.getAddress(role, now, (err, address) => {
+      if (err) {
+        return res.send(`E ${err}`)
+      }
+      if (address) {
+        return res.send(`OK ${address}`)
+      }
+    })
   } else {
     var n = 0;
     store.each((lease) => {
@@ -157,9 +168,8 @@ app.use(express.static('static'))
 function init(store, port, callback) {
   let config = new Config({port: port})
   config.ensure((settings) => {
-    console.log(`registry init settings=${JSON.stringify(settings)}`)
-    console.log(`registry init store=${store.constructor.name}`)
     app.set('settings', settings)
+    app.set('store', store)
     store = store || stores[settings.store]
     store.refreshVersions((err, version) => {
       if (callback) return callback(err, app, settings)
@@ -168,7 +178,6 @@ function init(store, port, callback) {
 }
 
 function listen(app, settings, callback) {
-  console.log(`registry listen settings=${JSON.stringify(settings)}`)
   let ret = app.listen(settings.port, () => {
     console.log(`* Registry (Primary) listening on ${Config.toURL(settings)}`)
     if (callback) return callback(null, app, settings)

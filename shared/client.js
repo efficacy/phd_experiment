@@ -10,18 +10,13 @@ const Client = class {
     }
     ensure(destination, callback) {
         let self = this
-        console.log(`client ensure dest=${destination} settings=${this.settings}`)
         if (!this.settings) {
             this.config.ensure((settings) => {
                 self.roles[Roles.REGISTRY] = settings.registry
-                console.log(`added registry from settings. roles=${JSON.stringify(self.roles)}`)
                 self.settings = settings
-                console.log(`client ensure after config.emsure, settings=${JSON.stringify(self.settings)}`)
-                console.log(`client.ensure about to lookup with fresh settings`)
                 self.lookup(destination, callback)
             })
         } else {
-            console.log(`client.ensure about to lookup with existing settings`)
             self.lookup(destination, callback)
         }
     }
@@ -37,8 +32,9 @@ const Client = class {
                 return callback(err)
             }
             if (text.startsWith('OK ')) {
-                this.roles[destination] = text.substring(3)
-                return callback(null, settings)
+                let host = text.substring(3)
+                this.roles[destination] = host
+                return callback(null, host)
             }
             return callback(text)
         })
@@ -65,11 +61,9 @@ const Client = class {
             }
             this.callRegistry('register', `role=${role}&address=${this.settings.host}:${this.settings.port}`, (err, text, headers) => {
                 if (err) {
-                    console.log(`client.register returning error ${err}`)
                     return callback(err)
                 }
                 try {
-                    console.log(`client.register receieved config ${text}`)
                     let expiry = parseInt(headers['x-lease-expiry'])
                     let config = JSON.parse(text)
                     if (keepalive) {
