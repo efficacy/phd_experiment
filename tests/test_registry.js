@@ -41,67 +41,78 @@ function ensure(port, callback) {
     }
 }
 
-test('registry is running', (t) => {
-    ensure(dfl_port, (client) => {
-        client.check((err, text) => {
-            t.error(err, 'no error from selfcheck')
-            t.equal(text, 'OK', 'correct response')
-            t.end()
+function run(callback) {
+
+    test('registry is running', (t) => {
+        ensure(dfl_port, (client) => {
+            client.check((err, text) => {
+                t.error(err, 'no error from selfcheck')
+                t.equal(text, 'OK', 'correct response')
+                t.end()
+            })
         })
     })
-})
 
-test('register known role', (t) => {
-    ensure(dfl_port, (client) => {
-        client.register('TEST', false, (err, expiry, config) => {
-            t.error(err, 'no error from register')
-            t.ok(expiry > 0)
-            t.ok(config.addresses['TEST'].endsWith(`:${dfl_port}`), 'correct address')
-            t.end()
+    test('register known role', (t) => {
+        ensure(dfl_port, (client) => {
+            client.register('TEST', false, (err, expiry, config) => {
+                t.error(err, 'no error from register')
+                t.ok(expiry > 0)
+                t.ok(config.addresses['TEST'].endsWith(`:${dfl_port}`), 'correct address')
+                t.end()
+            })
         })
     })
-})
 
-test('register unknown role', (t) => {
-    ensure(9998, (client) => {
-        client.register('UGH', false, (err, expiry, config) => {
-            t.error(err, 'no error from register')
-            t.ok(expiry > 0, 'expiry provided')
-            t.ok(config.addresses['UGH'].endsWith(':9998'), 'correct address')
-            t.end()
+    test('register unknown role', (t) => {
+        ensure(9998, (client) => {
+            client.register('UGH', false, (err, expiry, config) => {
+                t.error(err, 'no error from register')
+                t.ok(expiry > 0, 'expiry provided')
+                t.ok(config.addresses['UGH'].endsWith(':9998'), 'correct address')
+                t.end()
+            })
         })
     })
-})
 
-test('register and lookup role', (t) => {
-    ensure(dfl_port, (client1) => {
-        client1.register('TEST1', false, (err, expiry, config) => {
-            t.error(err, 'no error from register 1')
-            ensure(9998, (client2) => {
-                client2.register('TEST2', false, (err, expiry, config) => {
-                    t.error(err, 'no error from register 2')
-                    client1.lookup('TEST2', (err, host) => {
-                        t.error(err, 'no error from lookup')
-                        t.ok(host.endsWith(':9998'), 'correct address')
-                        t.end()
+    test('register and lookup role', (t) => {
+        ensure(dfl_port, (client1) => {
+            client1.register('TEST1', false, (err, expiry, config) => {
+                t.error(err, 'no error from register 1')
+                ensure(9998, (client2) => {
+                    client2.register('TEST2', false, (err, expiry, config) => {
+                        t.error(err, 'no error from register 2')
+                        client1.lookup('TEST2', (err, host) => {
+                            t.error(err, 'no error from lookup')
+                            t.ok(host.endsWith(':9998'), 'correct address')
+                            t.end()
+                        })
                     })
                 })
             })
         })
     })
-})
 
-test.onFinish(() => {
-    let entries = Object.entries(services)
-    let n = entries.length
-    for (const [port, service] of entries) {
-        console.log(`* stopping registry on port ${port}`);
-        stop_registry(port, service, (port) => {
-            console.log(`* registry stopped on part ${port}`)
-            if (--n <= 0) {
-                process.exit(0) // TODO this is a hack. Why does it hang unless I do this?
-            }
-        })
-    }
-      
-})
+    test.onFinish(() => {
+        let entries = Object.entries(services)
+        let n = entries.length
+        for (const [port, service] of entries) {
+            console.log(`* stopping registry on port ${port}`);
+            stop_registry(port, service, (port) => {
+                console.log(`* registry stopped on part ${port}`)
+                if (--n <= 0) {
+                    callback()
+                }
+            })
+        }
+
+    })
+}
+
+if (require.main === module) {
+    run(() => {
+        process.exit(0)
+    })
+}
+
+module.exports = run

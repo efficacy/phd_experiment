@@ -37,42 +37,50 @@ function ensure(port, callback) {
     }
 }
 
-test('request to url', (t) => {
-    ensure(dfl_port, (err, requester) => {
-        requester.call(`http://localhost:${dfl_port}`, 'selfcheck', '', (err, text, headers) => {
-            t.error(err, 'no error from selfcheck')
-            t.equal(text, 'OK', 'correct response')
-            t.end()
+function run(callback) {
+    test('request to url', (t) => {
+        ensure(dfl_port, (err, requester) => {
+            requester.call(`http://localhost:${dfl_port}`, 'selfcheck', '', (err, text, headers) => {
+                t.error(err, 'no error from selfcheck')
+                t.equal(text, 'OK', 'correct response')
+                t.end()
+            })
         })
     })
-})
 
-test('request to decomposed spec', (t) => {
-    ensure(dfl_port, (err, requester) => {
-        requester.call({host: 'localhost', port: dfl_port}, 'selfcheck', '', (err, text, headers) => {
-            t.error(err, 'no error from selfcheck')
-            t.equal(text, 'OK', 'correct response')
-            t.end()
+    test('request to decomposed spec', (t) => {
+        ensure(dfl_port, (err, requester) => {
+            requester.call({ host: 'localhost', port: dfl_port }, 'selfcheck', '', (err, text, headers) => {
+                t.error(err, 'no error from selfcheck')
+                t.equal(text, 'OK', 'correct response')
+                t.end()
+            })
         })
     })
-})
 
-test('request to a role', (t) => {
-    ensure(dfl_port, (err, requester) => {
-        requester.call(Roles.REGISTRY, 'selfcheck', '', (err, text, headers) => {
-            t.error(err, 'no error from selfcheck')
-            t.equal(text, 'OK', 'correct response')
-            t.end()
+    test('request to a role', (t) => {
+        ensure(dfl_port, (err, requester) => {
+            requester.call(Roles.REGISTRY, 'selfcheck', '', (err, text, headers) => {
+                t.error(err, 'no error from selfcheck')
+                t.equal(text, 'OK', 'correct response')
+                t.end()
+            })
         })
     })
-})
 
-test.onFinish(() => {
-    console.log(`* stopping registry on port ${dfl_port}`);
-    stop_registry(dfl_port, (port) => {
-        console.log(`* registry stopped on part ${port}`)
-        if (require.main === module) {
-            process.exit(0) // TODO this is a hack. Why does it hang unless I do this?
-        }
+    test.onFinish(() => {
+        console.log(`* stopping registry on port ${dfl_port}`);
+        stop_registry(dfl_port, (port) => {
+            console.log(`* registry stopped on part ${port}`)
+            callback()
+        })
     })
-})
+}
+
+if (require.main === module) {
+    run(() => {
+        process.exit(0)
+    })
+}
+
+module.exports = run
