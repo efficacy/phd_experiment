@@ -68,7 +68,6 @@ function init(store, port, callback) {
     app.set('settings', settings)
     app.set('store', store)
     store.start((err) => {
-      console.log(`Database initialisation: ${err}`)
         if (callback) return callback(err, app, settings)
     })
   })

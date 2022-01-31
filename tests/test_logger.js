@@ -44,7 +44,6 @@ function run(callback) {
     test('logger is running', (t) => {
         ensure(dfl_port, (client) => {
             client.call(`http://localhost:${service_port}`,'status','',(err, text) => {
-                console.log(`status response: ${text}`)
                 t.error(err, 'no error from status')
                 let status = JSON.parse(text)
                 t.assert('session' in status, 'status response has a session key')
