@@ -20,6 +20,11 @@ const Client = class {
             self.lookup(destination, callback)
         }
     }
+    call(destination, action, params, callback) {
+        this.requester.call(destination, action, params, (err, text, headers) => {
+            callback(err, text, headers)
+        })
+    }
     lookup(destination, callback) {
         if (this.roles[destination]) {
             return callback(null, this.settings)
@@ -39,10 +44,9 @@ const Client = class {
             return callback(text)
         })
     }
+
     callRegistry(action, params, callback) {
-        this.requester.call(Roles.REGISTRY, action, params, (err, text, headers) => {
-            callback(err, text, headers)
-        })
+        this.call(Roles.REGISTRY, action, params, callback)
     }
     check(callback) {
         this.ensure(Roles.REGISTRY, (err, settings)=>{
@@ -88,6 +92,11 @@ const Client = class {
             })
         })
     }
+
+    callLogger(action, params, callback) {
+        this.call(Roles.LOGGER, action, params, callback)
+    }
+    
 }
 
 module.exports = Client

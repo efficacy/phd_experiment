@@ -26,10 +26,10 @@ const Store = class {
     }
     setup(name, callback) {
         this.state.session = name
-        if (callback) callback(`OK: ${state.session}`)
+        if (callback) callback(null, `${state.session}`)
     }
     start(callback) {
-        if (callback) callback('OK');
+        if (callback) callback();
     }
     append(stamp, voltage, current, callback) {
         pool.query('INSERT INTO log (s,t,v,i) values ($1,$2,$3,$4)', [state.session, stamp, voltage, current],
@@ -38,7 +38,7 @@ const Store = class {
                     if (error) {
                         callback(error)
                     } else {
-                        callback('OK')
+                        callback()
                     }
                 } else if (error) {
                     throw error
@@ -46,7 +46,7 @@ const Store = class {
             })
     }
     stop(callback) {
-        if (callback) callback('OK');
+        if (callback) callback();
     }
     status(callback) {
         pool.query("SELECT count(*) FROM log AS count",
@@ -67,11 +67,7 @@ const Store = class {
         pool.query("TRUNCATE log",
             function (error, results) {
                 if (callback) {
-                    if (error) {
-                        callback(error)
-                    } else {
-                        callback('OK')
-                    }
+                    callback(errpr)
                 } else if (error) {
                     throw error
                 }
@@ -84,11 +80,7 @@ const Store = class {
                 pool.query(CREATE_TABLE,
                     function (error, results) {
                         if (callback) {
-                            if (error) {
-                                callback(error)
-                            } else {
-                                callback('OK')
-                            }
+                            callback(error)
                         } else if (error) {
                             throw error
                         }

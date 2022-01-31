@@ -12,6 +12,7 @@ const Requester = class {
     }
     call(destination, action, params, callback) {
         let spec = this.endpoint.expand(destination)
+        // console.log(`Requester.call dest=${destination} spec=${JSON.stringify(spec)} action=${action} params=${params}`)
         if (!spec.caller) {
             callback(`unknown protocol: ${spec.protocol}`)
         }
