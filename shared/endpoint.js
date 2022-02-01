@@ -93,9 +93,7 @@ const Endpoint = class {
             if (match) {
                 let role = match[0]
                 let found = this.findRole(role)
-                spec.host = getHost(found, 'localhost')
-                spec.port = getPort(found, '80')
-                spec = this.applyDefaults(spec)
+                spec = this.expand(found)
             }
         }
 
@@ -106,6 +104,7 @@ const Endpoint = class {
         }
 
         spec.url = `${spec.protocol}://${spec.host}:${spec.port}/`
+        spec.base = `${spec.host}:${spec.port}/`
         spec.expanded = true
         return spec
     }
@@ -113,6 +112,11 @@ const Endpoint = class {
     toURL(s) {
         let spec = this.expand(s)
         return spec.url
+    }
+
+    toBase(s) {
+        let spec = this.expand(s)
+        return spec.base
     }
 }
 

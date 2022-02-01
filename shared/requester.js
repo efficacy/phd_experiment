@@ -16,7 +16,9 @@ const Requester = class {
         if (!spec.caller) {
             callback(`unknown protocol: ${spec.protocol}`)
         }
-        spec.caller.get(`${spec.url}${action}?${params}`, (res) => {
+        let url = `${spec.url}${action}?${params}`
+        // console.log(`requester.call url=${url}`)
+        spec.caller.get(url, (res) => {
             let text = ''
             res.on('data', d => {
                 text += d

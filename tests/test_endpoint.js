@@ -32,7 +32,15 @@ function run(callback) {
         t.end()
     })
 
-    test('ip address with protocol and port', (t) => {
+    test('ip address with real protocol and port', (t) => {
+        let e = new Endpoint()
+        let spec = e.parse('http://1.2.3.4:995')
+        console.log(`parsed full url spec=${JSON.stringify(spec)}`)
+        t.equal(e.toURL('http://1.2.3.4:995'), 'http://1.2.3.4:995/', 'ip address with real protocol and port')
+        t.end()
+    })
+
+    test('ip address with unknown protocol and port', (t) => {
         let e = new Endpoint()
         t.equal(e.toURL('banana://1.2.3.4:995'), 'banana://1.2.3.4:995/', 'ip address with protocol and port')
         t.end()

@@ -1,7 +1,7 @@
 const MemoryStore = class {
   constructor() {
     this.leases = {}
-    this.duration = 5000
+    this.duration = 10000
     this.version = 0
     this.versionData = {
       0: {
@@ -49,12 +49,7 @@ const MemoryStore = class {
     return callback()
   }
   getLeaseDurationInMillis(role, callback) {
-    // MIRROR is a local server, and should be timed to minimise lease renewals
-    // Others should be relatively quick, so they all register with the mirror if available
     let ret = this.duration
-    if (role == 'MIRROR' || !('MIRROR' in this.leases)) {
-      ret = 86400000
-    }
     return callback(null, ret)
   }
   reap(when, callback) {

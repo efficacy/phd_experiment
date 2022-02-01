@@ -8,6 +8,7 @@ const stores = {
 }
 
 const app = express()
+const dfl_port = 9997
 
 app.get('/selfcheck', (req, res) => {
   res.setHeader('Content-Type', 'text/plain')
@@ -23,6 +24,7 @@ app.get('/register', (req, res) => {
   store.getLeaseDurationInMillis(role, (err, duration) => {
     if (err) return res.send(err)
     let end = now + duration
+    console.log(`* register role=${role} address=${address} lease=${duration}ms`)
     store.addIpAddressLease(role, address, end, (err) => {
       if (err) return res.send(err)
       var index = ""
@@ -166,7 +168,7 @@ app.get('/clear', (req, res) => {
 app.use(express.static('static'))
 
 function init(store, port, callback) {
-  let config = new Config({port: port})
+  let config = new Config({ port: port })
   config.ensure((settings) => {
     app.set('settings', settings)
     app.set('store', store)
@@ -177,22 +179,15 @@ function init(store, port, callback) {
   })
 }
 
-function listen(app, settings, callback) {
-  let ret = app.listen(settings.port, () => {
-    console.log(`* Registry (Primary) listening on ${Config.toURL(settings)}`)
-    if (callback) return callback(null, app, settings)
-  })
-  return ret
-}
-
 if (require.main === module) {
-  init(stores.memory, (err, app, settings) => {
+  init(stores.memory, dfl_port, (err, app, settings) => {
     if (err) throw err
-    listen(app, settings)
+    let ret = app.listen(settings.port, () => {
+      console.log(`* Registry (Primary) listening on ${Config.toURL(settings)}`)
+    })
   })
 }
 
 module.exports = {
-  init: init,
-  listen: listen
+  init: init
 }

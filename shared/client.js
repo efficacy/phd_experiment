@@ -3,8 +3,8 @@ const Requester = require('./requester');
 const Roles = require('./roles');
 
 const Client = class {
-    constructor(myrole, myport) {
-        this.config = new Config({role: myrole, port: myport})
+    constructor(myrole, myhost) {
+        this.config = new Config({role: myrole, host: myhost})
         this.roles = {}
         this.requester = new Requester(this.roles)
     }
@@ -14,10 +14,10 @@ const Client = class {
             this.config.ensure((settings) => {
                 self.roles[Roles.REGISTRY] = settings.registry
                 self.settings = settings
-                self.lookup(destination, callback)
+                self.lookup(destination, self.settings, callback)
             })
         } else {
-            self.lookup(destination, callback)
+            self.lookup(destination, self.settings, callback)
         }
     }
     call(destination, action, params, callback) {
@@ -25,9 +25,9 @@ const Client = class {
             callback(err, text, headers)
         })
     }
-    lookup(destination, callback) {
+    lookup(destination, settings, callback) {
         if (this.roles[destination]) {
-            return callback(null, this.settings)
+            return callback(null, settings)
         }
         if (!this.roles[Roles.REGISTRY]) {
             return callback(`unable to find Registry to lookup role ${destination}`)
@@ -39,7 +39,7 @@ const Client = class {
             if (text.startsWith('OK ')) {
                 let host = text.substring(3)
                 this.roles[destination] = host
-                return callback(null, host)
+                return callback(null, settings)
             }
             return callback(text)
         })
@@ -58,12 +58,14 @@ const Client = class {
             })
         })
     }
-    register(role, keepalive, callback) {
+    register(keepalive, callback) {
+        let self = this
         this.ensure(Roles.REGISTRY, (err, settings)=>{
             if (err) {
                 return callback(err)
             }
-            this.callRegistry('register', `role=${role}&address=${this.settings.host}:${this.settings.port}`, (err, text, headers) => {
+            let params = `role=${settings.role}&address=${settings.host}`
+            this.callRegistry('register', params, (err, text, headers) => {
                 if (err) {
                     return callback(err)
                 }
@@ -72,13 +74,13 @@ const Client = class {
                     let config = JSON.parse(text)
                     if (keepalive) {
                         if (config) {
-                            host = config.server
+                            let host = config.server
                             this.config = config
                         }
                         let now = Date.now()
                         let lease = expiry - now - 10;
                         setTimeout(() => {
-                            return this.register(host, role, keepalive)
+                            return self.register(keepalive, callback)
                         }, lease)
                     }
                     if (callback) callback(null, expiry, config)

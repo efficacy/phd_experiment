@@ -7,8 +7,8 @@ const stores = {
   postgres: require('./store/postgres').create()
 }
 
-const client = new Client({ role: Roles.LOGGER, port: 3002, store: 'postgres' })
 const app = express()
+const dfl_port = 9996
 
 app.get('/status', (req, res) => {
   let store = app.get('store')
@@ -62,13 +62,15 @@ app.get('/log', (req, res) => {
 app.use(express.static('static'))
 
 function init(store, port, callback) {
-  let config = new Config({port: port})
+  let config = new Config({ port: port })
   config.ensure((settings) => {
     store = store || stores[settings.store]
+
+    app.set('client', new Client(Roles.LOGGER, Config.toURL(settings)))
     app.set('settings', settings)
     app.set('store', store)
     store.start((err) => {
-        if (callback) return callback(err, app, settings)
+      if (callback) return callback(err, app, settings)
     })
   })
 }
@@ -82,11 +84,11 @@ function listen(app, settings, callback) {
 }
 
 if (require.main === module) {
-  init(stores.memory, (err, app, settings) => {
+  init(stores.files, dfl_port, (err, app, settings) => {
     if (err) throw err
-    listen(app, settings, (err, app, settings) => {
-      if (err) throw err
-      client.register(settings.role, true, (err) => {
+    service = app.listen(settings.port, () => {
+      console.log(`* Logger listening on ${Config.toURL(settings)}`)
+      app.get('client').register(true, (err) => {
         if (err) throw err
         console.log(`* Logger registered with Registry on ${settings.registry}`)
       })
@@ -95,6 +97,5 @@ if (require.main === module) {
 }
 
 module.exports = {
-  init: init,
-  listen: listen
+  init: init
 }

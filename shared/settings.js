@@ -1,6 +1,9 @@
 const net = require('net');
 const yargs = require('yargs')
 
+const Endpoint = require('./endpoint')
+const endpoint = new Endpoint()
+
 function findIp(beacon, callback) {
     let client = net.connect({
         port: 80,
@@ -18,8 +21,8 @@ const Config = class {
 
         let argv = yargs
             .option('host', {
-                alias: 'a',
-                description: 'IP host or hostname of this service',
+                alias: 'u',
+                description: 'base URL (host with optional protocol and port) of this service',
                 type: 'string'
             })
             .option('port', {
@@ -76,7 +79,8 @@ const Config = class {
         return this.init(callback)
     }
     static toURL(settings) {
-        return `${settings.protocol||'http'}://${settings.host}:${settings.port}`
+        // console.log(`Config.toURL settings=${JSON.stringify(settings)}`)
+        return endpoint.toURL(settings)
     }
 }
 
