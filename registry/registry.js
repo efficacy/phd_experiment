@@ -110,6 +110,8 @@ app.get('/lookup', (req, res) => {
 
 app.get('/status', (req, res) => {
   let duration = req.query.duration
+  let store = app.get('store')
+
   if (duration) {
     store.setLeaseDurationInMillis(duration, (err) => {
       // don't need to wait for this. Maybe it should really be on its own endpoint?
