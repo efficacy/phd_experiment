@@ -113,12 +113,11 @@ app.get('/lookup', (req, res) => {
 })
 
 app.get('/status', (req, res) => {
-  let duration = req.query.duration
   let store = app.get('store')
 
-  if (duration) {
-    lease_duration = duration
-    // Maybe this should really be on its own endpoint?
+  if (req.query.duration) {
+    lease_duration = parseInt(req.query.duration)
+    //TODO Maybe this should really be on its own endpoint?
   }
 
   let now = Date.now()
