@@ -80,7 +80,7 @@
 			if (duration.trim()) {
 			alert(' set lease ' + duration )
 				httpGet('/status?duration='+duration, function(text) {
-					document.getElementById("leaseout").innerHTML = text
+					document.getElementById("status").innerHTML = text
 				})
 			} else {
 				document.getElementById("leaseout").innerHTML = "Please supply valid duration"
