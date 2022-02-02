@@ -66,22 +66,24 @@ const Client = class {
             }
             let params = `role=${settings.role}&address=${settings.host}`
             this.callRegistry('register', params, (err, text, headers) => {
+                let now = Date.now()
                 if (err) {
                     return callback(err)
                 }
                 try {
-                    let expiry = parseInt(headers['x-lease-expiry'])
+                    let expiry_header = headers['x-lease-expiry']
+                    let expiry = parseInt(expiry_header)
+                    let lease = expiry - now
+                    // console.log(`Client.register: got expiry header ${expiry_header} => ${expiry}  now=${now} duration=${expiry-now}`)
                     let config = JSON.parse(text)
                     if (keepalive) {
                         if (config) {
                             let host = config.server
                             this.config = config
                         }
-                        let now = Date.now()
-                        let lease = expiry - now - 10;
                         setTimeout(() => {
                             return self.register(keepalive, callback)
-                        }, lease)
+                        }, lease - 10) // the 10 is a fiddle factor to make sure it's renewed early
                     }
                     if (callback) callback(null, expiry, config)
                 } catch (err) {
@@ -96,7 +98,7 @@ const Client = class {
     }
 
     callLogger(action, params, callback) {
-        this.call(Roles.LOGGER, action, params, callback)
+        this.call(Roles.LOG, action, params, callback)
     }
     
 }

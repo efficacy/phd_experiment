@@ -88,20 +88,6 @@ const FileStore = class {
     })
   }
 
-  setLeaseDurationInMillis(duration, callback) {
-    this.fetch((err) => {
-      if (err) return callback(err)
-      this.cache.setLeaseDurationInMillis(duration, callback)
-    })
-  }
-
-  getLeaseDurationInMillis(role, callback) {
-    this.fetch((err) => {
-      if (err) return callback(err)
-      this.cache.getLeaseDurationInMillis(role, callback)
-    })
-  }
-
   reap(when, callback) {
     this.fetch((err) => {
       if (err) return callback(err)

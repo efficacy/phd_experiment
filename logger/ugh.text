@@ -1,0 +1,19 @@
+
+> logger@1.0.0 start
+> node logger.js
+
+* Logger listening on http://10.0.2.15:9996/
+* Logger registered with Registry on http://192.168.0.185:9997 renew in 11972ms
+* Logger registered with Registry on http://192.168.0.185:9997 renew in 11992ms
+* Logger registered with Registry on http://192.168.0.185:9997 renew in 11995ms
+* Logger registered with Registry on http://192.168.0.185:9997 renew in 11998ms
+* Logger registered with Registry on http://192.168.0.185:9997 renew in 11998ms
+* Logger registered with Registry on http://192.168.0.185:9997 renew in 11997ms
+* Logger registered with Registry on http://192.168.0.185:9997 renew in 11996ms
+* Logger registered with Registry on http://192.168.0.185:9997 renew in 11995ms
+* Logger registered with Registry on http://192.168.0.185:9997 renew in 11994ms
+* Logger registered with Registry on http://192.168.0.185:9997 renew in 11996ms
+* Logger registered with Registry on http://192.168.0.185:9997 renew in 11997ms
+* Logger registered with Registry on http://192.168.0.185:9997 renew in 11994ms
+* Logger registered with Registry on http://192.168.0.185:9997 renew in 11993ms
+* Logger registered with Registry on http://192.168.0.185:9997 renew in 11992ms

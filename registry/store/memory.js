@@ -1,7 +1,6 @@
 const MemoryStore = class {
   constructor() {
     this.leases = {}
-    this.duration = 10000
     this.version = 0
     this.versionData = {
       0: {
@@ -43,14 +42,6 @@ const MemoryStore = class {
       fn(value)
     })
     return callback()
-  }
-  setLeaseDurationInMillis(duration, callback) {
-    this.duration = parseInt(duration)
-    return callback()
-  }
-  getLeaseDurationInMillis(role, callback) {
-    let ret = this.duration
-    return callback(null, ret)
   }
   reap(when, callback) {
     var active = {}

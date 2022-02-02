@@ -10,6 +10,12 @@ const stores = {
 const app = express()
 const dfl_port = 9997
 
+let lease_duration = 12000
+function getLeaseDurationInMillis(role) {
+  // TODO adapt for different roles and over time?
+  return lease_duration
+}
+
 app.get('/selfcheck', (req, res) => {
   res.setHeader('Content-Type', 'text/plain')
   res.send('OK')
@@ -21,41 +27,40 @@ app.get('/register', (req, res) => {
   let settings = app.get('settings')
   let store = app.get('store')
   let now = Date.now()
-  store.getLeaseDurationInMillis(role, (err, duration) => {
+  let duration = getLeaseDurationInMillis(role)
+  let end = now + duration
+  console.log(`* register role=${role} address=${address} lease=${duration}ms`)
+  store.addIpAddressLease(role, address, end, (err) => {
     if (err) return res.send(err)
-    let end = now + duration
-    console.log(`* register role=${role} address=${address} lease=${duration}ms`)
-    store.addIpAddressLease(role, address, end, (err) => {
-      if (err) return res.send(err)
-      var index = ""
-      store.each((lease) => {
-        if (lease.when > now) {
-          if (index.length > 0) {
-            index += ',\n'
-          }
-          index += `"${lease.role}":"${lease.address}"`
+    var index = ""
+    store.each((lease) => {
+      if (lease.when > now) {
+        if (index.length > 0) {
+          index += ',\n'
         }
-      }, (err) => {
-        if (err) return res.send(err)
-        res.setHeader('Content-Type', 'application/json')
-        res.setHeader('X-Lease-Expiry', end)
+        index += `"${lease.role}":"${lease.address}"`
+      }
+    }, (err) => {
+      if (err) return res.send(err)
+      res.setHeader('Content-Type', 'application/json')
+      res.setHeader('X-Lease-Expiry', end)
 
-        let registry = `${settings.host}:${settings.port}`
-        store.getVersion((err, version) => {
+      let registry = `${settings.host}:${settings.port}`
+      store.getVersion((err, version) => {
+        if (err) {
+          return res.send(err)
+        }
+        store.getVersionData((err, versionData) => {
           if (err) {
             return res.send(err)
           }
-          store.getVersionData((err, versionData) => {
-            if (err) {
-              return res.send(err)
+          let script = null
+          if ('scripts' in versionData) {
+            if ((role + '.sh') in versionData.scripts) {
+              script = versionData.scripts[role + '.sh']
             }
-            let script = null
-            if ('scripts' in versionData) {
-              if ((role + '.sh') in versionData.scripts) {
-                script = versionData.scripts[role + '.sh']
-              }
-            }
-            let response = `{
+          }
+          let response = `{
               "version": ${version},
               "role": "${role}",
               "registry": "${registry}",
@@ -64,8 +69,7 @@ app.get('/register', (req, res) => {
                 ${index}
               }
             }`
-            return res.send(response)
-          })
+          return res.send(response)
         })
       })
     })
@@ -113,9 +117,8 @@ app.get('/status', (req, res) => {
   let store = app.get('store')
 
   if (duration) {
-    store.setLeaseDurationInMillis(duration, (err) => {
-      // don't need to wait for this. Maybe it should really be on its own endpoint?
-    })
+    lease_duration = duration
+    // Maybe this should really be on its own endpoint?
   }
 
   let now = Date.now()
@@ -133,12 +136,10 @@ app.get('/status', (req, res) => {
     ret += `<td><a href='#' onclick='remove("${lease.role}", "output-${lease.role}")'>remove</a> <span id="output-${lease.role}"></span></td>`
     ret += "</tr>\n"
   }, (err) => {
-    store.getLeaseDurationInMillis('OTHER', (err, duration) => {
-      if (err) return res.send(err)
-      ret += `</table><i>Lease duration: ${duration} milliseconds</i>`
-      res.setHeader('Content-Type', 'text/html')
-      res.send(ret)
-    })
+    duration = getLeaseDurationInMillis('OTHER')
+    ret += `</table><i>Lease duration: ${duration} milliseconds</i>`
+    res.setHeader('Content-Type', 'text/html')
+    res.send(ret)
   })
 })
 

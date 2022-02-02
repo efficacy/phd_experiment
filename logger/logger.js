@@ -66,7 +66,7 @@ function init(store, port, callback) {
   config.ensure((settings) => {
     store = store || stores[settings.store]
 
-    app.set('client', new Client(Roles.LOGGER, Config.toURL(settings)))
+    app.set('client', new Client(Roles.LOG, Config.toURL(settings)))
     app.set('settings', settings)
     app.set('store', store)
     store.start((err) => {
@@ -88,9 +88,9 @@ if (require.main === module) {
     if (err) throw err
     service = app.listen(settings.port, () => {
       console.log(`* Logger listening on ${Config.toURL(settings)}`)
-      app.get('client').register(true, (err) => {
+      app.get('client').register(true, (err, expiry, config) => {
         if (err) throw err
-        console.log(`* Logger registered with Registry on ${settings.registry}`)
+        console.log(`* Logger registered with Registry on ${settings.registry} renew in ${expiry - Date.now()}ms`)
       })
     })
   })
