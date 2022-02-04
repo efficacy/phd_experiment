@@ -65,10 +65,10 @@ const FileStore = class {
     })
   }
 
-  removeIpAddressLease(role, callback) {
+  endIpAddressLease(role, address, callback) {
     this.fetch((err) => {
       if (err) return callback(err)
-      this.cache.removeIpAddressLease(role, (err) => {
+      this.cache.endIpAddressLease(role, address, (err) => {
         this.flush(callback)
       })
     })
@@ -197,6 +197,16 @@ const FileStore = class {
         })
       })
     })
+  }
+
+  close(callback) {
+    if (this.cache) {
+      this.cache.close(() => {
+        return callback()
+      })
+    } else {
+      return callback()
+    }
   }
 }
 module.exports = FileStore

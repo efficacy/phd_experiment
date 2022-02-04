@@ -32,4 +32,7 @@ const Store = class {
     rebuild(callback) {
         if (callback) callback('OK');
     }
+    close(callback) {
+        return callback()
+    }
 }

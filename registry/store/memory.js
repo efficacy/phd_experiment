@@ -16,21 +16,31 @@ const MemoryStore = class {
       }
     }
   }
+
   static create() {
     return new MemoryStore()
   }
+  
   addIpAddressLease(role, address, when, callback) {
     this.leases[role] = {
       role: role,
       address: address,
-      when: when
+      when: when,
+      status: 'ACTIVE'
     }
     return callback()
   }
-  removeIpAddressLease(role, callback) {
-    delete this.leases[role]
-    return callback()
+
+  endIpAddressLease(role, address, callback) {
+    //TODO support multiple addresses for a single role
+    if (role in this.leases) {
+      this.leases[role].status = 'ENDED'
+      return callback()
+    } else {
+      return callback('No registration for ${role}')
+    }
   }
+
   getAddress(role, when, callback) {
     when = when || Date.now()
     var lease = this.leases[role]
@@ -72,6 +82,9 @@ const MemoryStore = class {
   setVersionData(version, versionData, callback) {
     this.version = version
     this.versionData = versionData
+    return callback()
+  }
+  close(callback) {
     return callback()
   }
 }

@@ -41,5 +41,8 @@ const FileLogStore = class {
         // TODO remove/recreate output file
         if (callback) callback()
     }
+    close(callback) {
+        if (callback) callback()
+    }
 }
 module.exports = FileLogStore

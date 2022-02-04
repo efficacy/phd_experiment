@@ -59,6 +59,11 @@ app.get('/log', (req, res) => {
   })
 })
 
+app.get('/shutdown', (req, res) => {
+  res.send('OK')
+  shutdown()
+})
+
 app.use(express.static('static'))
 
 function init(store, port, callback) {
@@ -75,24 +80,43 @@ function init(store, port, callback) {
   })
 }
 
-function listen(app, settings, callback) {
-  let ret = app.listen(settings.port, () => {
-    console.log(`* Logger listening on ${Config.toURL(settings)}`)
-    if (callback) return callback(null, app, settings)
+function shutdown() {
+  let store = app.get('store')
+  let service = app.get('service')
+
+  store.close(() => {
+    service.close(() => {
+      let client = app.get('client')
+      let settings = app.get('settings')
+
+      client.deregister((err) => {
+        if (err) throw err
+        console.log(`* Logger deregistered from Registry on ${settings.registry}`)
+        console.log(`* Logger shutdown`)
+        process.exit();
+      })
+    })
   })
-  return ret
 }
 
 if (require.main === module) {
+  let exiting = false
+
+  process.on('SIGINT', () => {
+    console.log("Caught interrupt signal");
+    shutdown()
+  });
+
   init(stores.files, dfl_port, (err, app, settings) => {
     if (err) throw err
-    service = app.listen(settings.port, () => {
+    let service = app.listen(settings.port, () => {
       console.log(`* Logger listening on ${Config.toURL(settings)}`)
       app.get('client').register(true, (err, expiry, config) => {
         if (err) throw err
         console.log(`* Logger registered with Registry on ${settings.registry} renew in ${expiry - Date.now()}ms`)
       })
     })
+    app.set('service', service)
   })
 }
 

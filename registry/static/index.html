@@ -98,6 +98,17 @@
 				getStatus();
 			})})
 		})
+	
+		document.getElementById('shutdown').addEventListener('click', event => {
+			event.preventDefault()
+			fetch('/shutdown', {mode: 'cors'}).then((r)=>{r.text().then((s) => {
+				document.getElementById('shutdown-output').innerHTML = s
+				setTimeout(() => {
+					document.getElementById('shutdown-output').innerHTML = ''
+				}, 1000)
+				getStatus();
+			})})
+		})
 	}
 	</script>
 	
@@ -134,6 +145,7 @@
 	<h1>General Operations</h1>
 	<ul>
 		<li><a href='#' id='clear'>Clear Lease Table</a> <span id='clear-output'></span></li>
+		<li><a href='#' style='color:red'id='shutdown'>Shut Down Registry</a> <span id='shutdown-output'></span></li>
 	</ul>
 	
 	</body>

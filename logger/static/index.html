@@ -108,6 +108,17 @@
 				getStatus();
 			})})
 		})
+	
+		document.getElementById('shutdown').addEventListener('click', event => {
+			event.preventDefault()
+			fetch('/shutdown', {mode: 'cors'}).then((r)=>{r.text().then((s) => {
+				document.getElementById('shutdown-output').innerHTML = s
+				setTimeout(() => {
+					document.getElementById('shutdown-output').innerHTML = ''
+				}, 1000)
+				getStatus();
+			})})
+		})
 	}
 	</script>
 	
@@ -137,27 +148,11 @@
 		<button type="submit">Submit</button> <span id=log-output></span>
 	</form>
 	
-	<!--
-	<h1>Lookup</h1>
-	<form id='lookup'>
-		<label for='role'>Role:</label>
-		<input type='text' id='role' name='role'/>
-		<button type="submit">Submit</button>
-	</form>
-	<div id=lookout></div>
-	
-	<h1>Set Default Lease</h1>
-	<form id='lease'>
-		<label for='duration'>Duration:</label>
-		<input type='text' id='duration' name='duration'/>
-		<button type="submit">Submit</button>
-	</form>
-	<div id=leaseout></div>
-	-->
 	<h1>General Operations</h1>
 	<ul>
 		<li><a href='#' id='truncate'>Truncate Log Table</a> <span id='truncate-output'></span></li>
 		<li><a href='#' id='rebuild'>Rebuild Log Table</a> <span id='rebuild-output'></span></li>
+		<li><a href='#' style='color:red'id='shutdown'>Shut Down Logger</a> <span id='shutdown-output'></span></li>
 	</ul>
 	
 	</body>

@@ -78,11 +78,17 @@ app.get('/register', (req, res) => {
 
 app.get('/deregister', (req, res) => {
   let role = req.query.role
+  let address = req.query.address
   let store = app.get('store')
 
-  store.removeIpAddressLease(role)
-  res.setHeader('Content-Type', 'text/plain')
-  res.send('OK')
+  console.log(`* deregister role=${role} address=${address}`)
+  store.endIpAddressLease(role, address, (err) => {
+    res.setHeader('Content-Type', 'text/plain')
+    if (err) {
+      return res.send(err)
+    }
+    res.send('OK')
+  })
 })
 
 app.get('/lookup', (req, res) => {
@@ -123,17 +129,15 @@ app.get('/status', (req, res) => {
   let now = Date.now()
   var ret = "<table border='1'><tr><th>Name</th><th>Address</th><th>Status</th><th>Operations</th></tr>\n"
   store.each((lease) => {
-    ret += `<tr><td>${lease.role}</td><td>${lease.address}</td><td>`
     let expiry = new Date(lease.when)
     // .format("yyyy-mm-dd HH:MM:ss l")
-    if (lease.when < now) {
-      ret += "<span style='color:red'>EXPIRED</span>"
-    } else {
-      ret += "<span style='color:green'>ACTIVE</span>"
+    let status = lease.status
+    if (status == 'ACTIVE' && lease.when < now) {
+      status = 'EXPIRED'
     }
-    ret += "</td>\n"
-    ret += `<td><a href='#' onclick='remove("${lease.role}", "output-${lease.role}")'>remove</a> <span id="output-${lease.role}"></span></td>`
-    ret += "</tr>\n"
+
+    ret += `<tr><td>${lease.role}</td><td>${lease.address}</td><td>${status}</td>\n`
+    ret += `<td><a href='#' onclick='remove("${lease.role}", "output-${lease.role}")'>remove</a> <span id="output-${lease.role}"></span></td></tr>\n`
   }, (err) => {
     duration = getLeaseDurationInMillis('OTHER')
     ret += `</table><i>Lease duration: ${duration} milliseconds</i>`
@@ -150,20 +154,26 @@ app.get('/refresh', (req, res) => {
   })
 })
 
-app.get('/remove', (req, res) => {
-  let role = req.query.role
-  store.removeIpAddressLease(role, (err) => {
+app.get('/clear', (req, res) => {
+  let store = app.get('store')
+
+  store.clear((err) => {
     if (err) throw err
     res.setHeader('Content-Type', 'text/plain')
     res.send('OK')
   })
 })
 
-app.get('/clear', (req, res) => {
-  store.clear((err) => {
-    if (err) throw err
-    res.setHeader('Content-Type', 'text/plain')
+app.get('/shutdown', (req, res) => {
+  let store = app.get('store')
+
+  store.close(() => {
+    let service = app.get('service')
     res.send('OK')
+    service.close(() => {
+      console.log(`* Registry (Primary) shutdown`)
+      process.exit()
+    })
   })
 })
 
@@ -187,6 +197,7 @@ if (require.main === module) {
     let ret = app.listen(settings.port, () => {
       console.log(`* Registry (Primary) listening on ${Config.toURL(settings)}`)
     })
+    app.set('service', ret)
   })
 }
 

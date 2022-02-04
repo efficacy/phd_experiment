@@ -97,6 +97,22 @@ const Client = class {
         })
     }
 
+    deregister(callback) {
+        let self = this
+        this.ensure(Roles.REGISTRY, (err, settings)=>{
+            if (err) {
+                return callback(err)
+            }
+            let params = `role=${settings.role}&address=${settings.host}`
+            this.callRegistry('deregister', params, (err, text, headers) => {
+                if (err) {
+                    return callback(err)
+                }
+                callback(null, 'OK')
+            })
+        })
+    }
+
     callLogger(action, params, callback) {
         this.call(Roles.LOG, action, params, callback)
     }

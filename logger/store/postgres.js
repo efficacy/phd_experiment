@@ -87,5 +87,8 @@ const Store = class {
                     })
             })
     }
+    close(callback) {
+        pool.end(callback)
+    }
 }
 module.exports = Store
