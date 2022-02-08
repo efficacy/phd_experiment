@@ -7,10 +7,12 @@ const stores = {
   files: require('./store/files').create()
 }
 
-const app = express()
 const dfl_port = 9997
+const dfl_lease_duration = 10000
 
-let lease_duration = 12000
+const app = express()
+
+let lease_duration = dfl_lease_duration
 function getLeaseDurationInMillis(role) {
   // TODO adapt for different roles and over time?
   return lease_duration

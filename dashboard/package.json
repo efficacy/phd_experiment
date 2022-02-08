@@ -1,0 +1,14 @@
+{
+  "name": "dashboard",
+  "version": "1.0.0",
+  "description": "general control panel for the whole test rig",
+  "main": "dashboard.js",
+  "scripts": {
+    "test": "node test_all.js"
+  },
+  "author": "Frank Carver",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.2"
+  }
+}

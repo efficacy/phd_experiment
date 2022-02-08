@@ -1,0 +1,67 @@
+<html>
+
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<title>Experiment Dashboard</title>
+</head>
+
+<body>
+	<script>
+		function httpGet(url, callback) {
+			var xhr = new XMLHttpRequest();
+			xhr.open("GET", url, true);
+			xhr.onload = function (e) {
+				callback(xhr.responseText);
+			};
+			xhr.send(null);
+		}
+
+		let oldServices = {}
+		function getServiceStatus() {
+			httpGet('/services', function (status) {
+				var services = JSON.parse(status)
+				var serviceTable = document.getElementById('services')
+				for (service in services) {
+					console.log(`getServiceStatus got: ${JSON.stringify(service)}`)
+				}
+			})
+		}
+
+		function catchSubmit(form, callback) {
+			if (form.attachEvent) {
+				form.attachEvent("submit", callback);
+			} else {
+				form.addEventListener("submit", callback);
+			}
+		}
+
+		window.onload = function () {
+			getServiceStatus();
+
+			document.getElementById('shutdown').addEventListener('click', event => {
+				event.preventDefault()
+				fetch('/shutdown', { mode: 'cors' }).then((r) => {
+					r.text().then((s) => {
+						document.getElementById('shutdown-output').innerHTML = s
+						setTimeout(() => {
+							document.getElementById('shutdown-output').innerHTML = ''
+						}, 1000)
+						getStatus();
+					})
+				})
+			})
+		}
+	</script>
+
+	<H1>Experiment Dashboard</h1>
+	<div id='services'>
+	</div>
+
+	<h1>General Operations</h1>
+	<ul>
+		<li><a href='#' style='color:red' id='shutdown'>Shut Down Dashboard</a> <span id='shutdown-output'></span></li>
+	</ul>
+
+</body>
+
+</html>
