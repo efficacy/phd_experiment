@@ -107,7 +107,7 @@ if (require.main === module) {
     shutdown()
   });
 
-  init(stores.files, dfl_port, (err, app, settings) => {
+  init(stores.postgres, dfl_port, (err, app, settings) => {
     if (err) throw err
     let service = app.listen(settings.port, () => {
       console.log(`* Logger listening on ${Config.toURL(settings)}`)

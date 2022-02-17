@@ -67,7 +67,7 @@
 		var log = document.getElementById('log');
 		catchSubmit(log, function(event) {
 			event.preventDefault();
-			var stamp = log.elements['stamp'].value.trim()
+			var stamp = log.elements['stamp'].value.trim() || Date.now()
 			var voltage = log.elements['voltage'].value.trim()
 			var current = log.elements['current'].value.trim()
 			if (stamp && voltage && current) {
@@ -139,8 +139,8 @@
 	
 	<h1>Log</h1>
 	<form id='log'>
-		<label for='stamp'>Timestamp:</label>
-		<input type='text' id='stamp' name='stamp'/>
+		<label for='stamp'>Time (<i>optional</i>):</label>
+		<input type='text' id='stamp' name='stamp'/><br/>
 		<label for='voltage'>Voltage:</label>
 		<input type='text' id='voltage' name='voltage'/>
 		<label for='current'>Current:</label>

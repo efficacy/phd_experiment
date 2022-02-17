@@ -25,14 +25,15 @@ const Store = class {
         return new Store()
     }
     setup(name, callback) {
+        console.log(`pg store, setting session to ${name}`)
         this.state.session = name
-        if (callback) callback(null, `${state.session}`)
+        if (callback) callback(null, this.state.session)
     }
     start(callback) {
         if (callback) callback();
     }
     append(stamp, voltage, current, callback) {
-        pool.query('INSERT INTO log (s,t,v,i) values ($1,$2,$3,$4)', [state.session, stamp, voltage, current],
+        this.pool.query('INSERT INTO log (s,t,v,i) values ($1,$2,$3,$4)', [this.state.session, stamp, voltage, current],
             function (error, results) {
                 if (callback) {
                     if (error) {
@@ -49,14 +50,15 @@ const Store = class {
         if (callback) callback();
     }
     status(callback) {
-        pool.query("SELECT count(*) FROM log AS count",
+        let self = this
+        this.pool.query("SELECT count(*) FROM log AS count",
             function (error, results) {
                 if (callback) {
                     if (error) {
                         callback(error)
                     } else {
                         let count = results.rows[0].count
-                        callback(null, state.session, count)
+                        callback(null, self.state.session, count)
                     }
                 } else if (error) {
                     throw error
@@ -64,7 +66,7 @@ const Store = class {
             })
     }
     truncate(callback) {
-        pool.query("TRUNCATE log",
+        this.pool.query("TRUNCATE log",
             function (error, results) {
                 if (callback) {
                     callback(errpr)
@@ -74,10 +76,10 @@ const Store = class {
             })
     }
     rebuild(callback) {
-        pool.query("DROP TABLE IF EXISTS log",
+        this.pool.query("DROP TABLE IF EXISTS log",
             function (error, results, fields) {
                 if (error) throw error
-                pool.query(CREATE_TABLE,
+                this.pool.query(CREATE_TABLE,
                     function (error, results) {
                         if (callback) {
                             callback(error)
@@ -88,7 +90,7 @@ const Store = class {
             })
     }
     close(callback) {
-        pool.end(callback)
+        this.pool.end(callback)
     }
 }
 module.exports = Store
