@@ -1,20 +1,23 @@
 const http = require('http')
 
+const host = 'localhost'
+const port = 9997
+
 let runs = 10000
 let sofar = 0
 let good = 0
 let bad = 0
 let start = Date.now()
 http.get({
-    hostname: 'localhost',
-    port: 3002,
+    hostname: host,
+    port: port,
     path: `/setup?s=squirt`,
     agent: false
 }, (res) => {
     for (let i = 0; i < runs; ++i) {
         http.get({
-            hostname: 'localhost',
-            port: 3002,
+            hostname: host,
+            port: port,
             path: `/log?t=${Date.now()}&v=4.9987&i=0.2356`,
             agent: false
         }, (res) => {

@@ -7,6 +7,8 @@ const stores = {
   postgres: require('./store/postgres').create()
 }
 
+const SERVICE = "Logger"
+
 const app = express()
 const dfl_port = 9996
 
@@ -91,8 +93,8 @@ function shutdown() {
 
       client.deregister((err) => {
         if (err) throw err
-        console.log(`* Logger deregistered from Registry on ${settings.registry}`)
-        console.log(`* Logger shutdown`)
+        console.log(`* ${SERVICE} deregistered from Registry on ${settings.registry}`)
+        console.log(`* ${SERVICE} shutdown`)
         process.exit();
       })
     })
@@ -110,10 +112,10 @@ if (require.main === module) {
   init(stores.postgres, dfl_port, (err, app, settings) => {
     if (err) throw err
     let service = app.listen(settings.port, () => {
-      console.log(`* Logger listening on ${Config.toURL(settings)}`)
+      console.log(`* ${SERVICE} listening on ${Config.toURL(settings)}`)
       app.get('client').register(true, (err, expiry, config) => {
         if (err) throw err
-        console.log(`* Logger registered with Registry on ${settings.registry} renew in ${expiry - Date.now()}ms`)
+        console.log(`* ${SERVICE} registered with Registry on ${settings.registry} renew in ${expiry - Date.now()}ms`)
       })
     })
     app.set('service', service)

@@ -30,18 +30,6 @@
 		}
 	}
 	
-	function remove(role, output) {
-		event.preventDefault()
-		fetch(`/remove?role=${role}`, {mode: 'cors'}).then((r)=>{r.text().then((s) => {
-			let dest = document.getElementById(output)
-			dest.innerHTML = s
-			setTimeout(() => {
-				dest.innerHTML = ''
-				getStatus();
-			}, 1000)
-		})})
-	}
-	
 	window.onload = function() {
 		getStatus();
 	
