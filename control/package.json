@@ -1,0 +1,15 @@
+{
+  "name": "control",
+  "version": "1.0.0",
+  "description": "experiment controller",
+  "main": "control.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.3",
+    "python-shell": "^3.0.1"
+  }
+}
