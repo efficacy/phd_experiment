@@ -1,14 +1,32 @@
 const express = require('express')
-const { Roles, Client, Config } = require('../shared/main')
+const { Roles, Client, Config, Requester } = require('../shared/main')
 
 const SERVICE = "Control"
 
 const app = express()
 const dfl_port = 9999
 
+let status = 'OK'
 app.get('/status', (req, res) => {
-  res.send('OK')
+  res.send(status)
 })
+
+let logger = new Requester()
+
+app.get('/run', (req, res) => {
+  let session = req.query.s
+  logger.call('192.168.0.50:9996', 'setup', `s=${session}`, (err) =>{
+    status = 'BUSY'
+    res.setHeader('Content-Type', 'text/plain')
+    res.send(err || 'OK')
+    console.log(`starting dummy child`)
+    setTimeout(() => {
+      console.log(`dummy child complete`)
+      status = 'OK'
+    }, 5000)
+  })
+})
+
 
 app.use(express.static('static'))
 
