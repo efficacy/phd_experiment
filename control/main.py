@@ -42,8 +42,7 @@ def run(logger):
             t = int(time.time() * 1000)
             v = ina260.get_voltage()
             i = ina260.get_current()
-            url = 'http://' + logger + '/log?t=' + str(t) + '&v=' + str(v) + '&i=' + str(i)
-            print("about to seng GET to " + url)
+            url = logger + 'log?t=' + str(t) + '&v=' + str(v) + '&i=' + str(i)
             res = requests.get(url)
             if res.status_code != 200:
                 print("error: " + str(res.status_code) + " " + str(res.content))
@@ -63,5 +62,10 @@ if __name__ == '__main__':
         if res.status_code != 200:
             print("error: " + res.status_code + " " + res.content)
         logger = res.content[3:].decode('UTF-8') # ignore the leading OK
-    print('found logger at',logger)
+        # print("logger form registry:" + logger)
+    else:
+        # print("logger from environment:" + logger)
+        if not logger.startswith("http"):
+            logger = "http://" + logger + "/"
+    # print('found logger at',logger)
     run(logger)
