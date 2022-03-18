@@ -39,7 +39,7 @@ const Client = class {
             if (text.startsWith('OK ')) {
                 let host = text.substring(3)
                 this.roles[destination] = host
-                return callback(null, settings)
+                return callback(host)
             }
             return callback(text)
         })
