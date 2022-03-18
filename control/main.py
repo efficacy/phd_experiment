@@ -4,6 +4,7 @@ import signal
 import time
 from datetime import datetime
 import requests
+import os
 
 class DummyINA260:
     def __init__(self, v=5.0, i=1.0):
@@ -34,25 +35,33 @@ if plat == 'raspberrypi':
 else:
     ina260 = DummyINA260()
 
-if __name__ == '__main__':
-    server = '192.168.1.156:3005'
-    res = requests.get('http://' + server + '/lookup?role=LOGGER')
-    if res.status_code != 200:
-        print("error: " + res.status_code + " " + res.content)
-    logger = res.content[3:].decode('UTF-8') # ignore the leading OK
-    print('found logger at',logger)
-
+def run(logger):
     running = True
     try:
         while running:
             t = int(time.time() * 1000)
             v = ina260.get_voltage()
             i = ina260.get_current()
-            res = requests.get('http://' + logger + '/log?t=' + str(t) + '&v=' + str(v) + '&i=' + str(i))
+            url = 'http://' + logger + '/log?t=' + str(t) + '&v=' + str(v) + '&i=' + str(i)
+            print("about to seng GET to " + url)
+            res = requests.get(url)
             if res.status_code != 200:
-                print("error: " + res.status_code + " " + res.content)
+                print("error: " + str(res.status_code) + " " + str(res.content))
             dt = datetime.now()
             time_to_sleep = 1.0 - (dt.microsecond * 0.000001)
             time.sleep(time_to_sleep)
     except KeyboardInterrupt:
         print("Run complete")
+    except signal.SIGINT:
+        print("Run complete")
+
+if __name__ == '__main__':
+    logger = os.getenv('LOGGER')
+    if not logger:
+        registry = os.getenv('REGISTRY')
+        res = requests.get('http://' + registry + '/lookup?role=LOG')
+        if res.status_code != 200:
+            print("error: " + res.status_code + " " + res.content)
+        logger = res.content[3:].decode('UTF-8') # ignore the leading OK
+    print('found logger at',logger)
+    run(logger)
