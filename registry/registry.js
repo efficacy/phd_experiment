@@ -105,6 +105,7 @@ app.get('/lookup', (req, res) => {
         return res.send(`E ${err}`)
       }
       if (address) {
+        console.log(`registry/lookup(${role})->${address}`)
         return res.send(`OK ${address}`)
       }
     })
