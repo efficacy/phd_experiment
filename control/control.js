@@ -1,5 +1,6 @@
 const express = require('express')
 const { Roles, Client, Config, Requester } = require('../shared/main')
+const { spawn } = require('child_process');
 
 const SERVICE = "Control"
 
@@ -11,22 +12,37 @@ app.get('/status', (req, res) => {
   res.send(status)
 })
 
-let logger = new Requester()
+let requester = new Requester()
+
+function measure() {
+  const measurer = spawn('python', ['./main.py']);
+  measurer.stdout.on('data', (data) => {
+      console.log(`P ${data.toString()}`);
+  });
+  measurer.stdout.on('end', () => {
+    console.log(`child process ended`)
+  })
+  measurer.on('error', (err) => {
+    console.log(`child process error: ${err}`)
+  })
+  return measurer
+}
 
 app.get('/run', (req, res) => {
   let session = req.query.s
-  logger.call('192.168.0.50:9996', 'setup', `s=${session}`, (err) =>{
+  requester.call(app.get('logger'), 'setup', `s=${session}`, (err) =>{
     status = 'BUSY'
     res.setHeader('Content-Type', 'text/plain')
     res.send(err || 'OK')
     console.log(`starting dummy child`)
+    let process = measure()
     setTimeout(() => {
-      console.log(`dummy child complete`)
+      process.kill('SIGINT')
+      console.log(`session complete`)
       status = 'OK'
-    }, 5000)
+    }, 20000)
   })
 })
-
 
 app.use(express.static('static'))
 
@@ -70,6 +86,10 @@ if (require.main === module) {
       app.get('client').register(true, (err, expiry, config) => {
         if (err) throw err
         console.log(`* ${SERVICE} registered with Registry on ${settings.registry} renew in ${expiry - Date.now()}ms`)
+      })
+      app.get('client').lookup(Roles.LOG, settings, (endpoint) => {
+        console.log(`looked up logger: ${endpoint}`)
+        app.set('logger', endpoint)
       })
     })
     app.set('service', service)
