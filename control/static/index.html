@@ -13,13 +13,13 @@
 		};
 		xhr.send(null);
 	}
-	
+
 	function getStatus() {
 		httpGet('/status', function(status) {
 			document.getElementById("status").innerHTML = status
 		})
 	}
-	
+
 	function catchSubmit(form, callback) {
 		if (form.attachEvent) {
 			form.attachEvent("submit", callback);
@@ -27,31 +27,107 @@
 			form.addEventListener("submit", callback);
 		}
 	}
-	
-	window.onload = function() {
-		getStatus();
-	
-		document.getElementById('shutdown').addEventListener('click', event => {
+
+	function catchClick(name) {
+		document.getElementById(name).addEventListener('click', event => {
 			event.preventDefault()
-			fetch('/shutdown', {mode: 'cors'}).then((r)=>{r.text().then((s) => {
-				document.getElementById('shutdown-output').innerHTML = s
+			fetch(`/${name}`, {mode: 'cors'}).then((r)=>{r.text().then((s) => {
+				document.getElementById(`${name}-output`).innerHTML = s
 				setTimeout(() => {
-					document.getElementById('shutdown-output').innerHTML = ''
+					document.getElementById(`${name}-output`).innerHTML = ''
 				}, 1000)
 				getStatus();
 			})})
 		})
 	}
+
+	window.onload = function() {
+		getStatus();
+
+		catchClick('dut_ready')
+		catchClick('load_ready')
+		catchClick('run_complete')
+		catchClick('shutdown')
+
+		var select = document.getElementById('select');
+		catchSubmit(select, function(event) {
+			event.preventDefault();
+			var scenario = select.elements['scenario'].value.trim()
+			var session = select.elements['session'].value.trim()
+			if (session) {
+				httpGet(`/select?scenario=${scenario}&session=${session}`, function(text) {
+					document.getElementById("select-output").innerHTML = text
+					getStatus();
+					setTimeout(() => {
+						document.getElementById('select-output').innerHTML = ''
+						select.elements['session'].value = ''
+					}, 1000)
+				})
+			} else {
+				document.getElementById("select-output").innerHTML = "Please supply valid session name"
+			}
+			return false
+		})
+
+		var setup = document.getElementById('start');
+		catchSubmit(start, function(event) {
+			event.preventDefault();
+			var session = start.elements['session'].value.trim()
+			if (session) {
+				httpGet(`/run?s=${session}`, function(text) {
+					document.getElementById("start-output").innerHTML = text
+					getStatus();
+					setTimeout(() => {
+						document.getElementById('start-output').innerHTML = ''
+						start.elements['session'].value = ''
+					}, 1000)
+				})
+			} else {
+				document.getElementById("start-output").innerHTML = "Please supply valid session name"
+			}
+			return false
+		})
+
+	}
 	</script>
-	
-	<H1>Experiment Logger</h1>
+
+	<H1>Experiment Controller</h1>
 	<div id='status'>
 	</div>
 
-  <h1>General Operations</h1>
+	<h1>Experimemt Lifecycle</h1>
+
+	<b>Select Scenario</b>
+	<form id='select'>
+		<label for='scenario'>Scenario:</label>
+		<input type='text' id='scenario' name='scenario'/>
+		<label for='session'>Session:</label>
+		<input type='text' id='session' name='session'/>
+		<button type="submit">Submit</button> <span id=select-output></span>
+	</form>
+
+	<b>Wait for Acknowledgement from devices</b>
+	<ul>
+		<li><a href='#' id='dut_ready'>DUT ready</a> <span id='dut_ready-output'></span></li>
+		<li><a href='#' id='load_ready'>LOAD ready</a> <span id='load_ready-output'></span></li>
+	</ul>
+
+	<b>Start Session</b>
+	<form id='start'>
+		<label for='session'>Session:</label>
+		<input type='text' id='session' name='session'/>
+		<button type="submit">Submit</button> <span id=start-output></span>
+	</form>
+
+	<b>Scenario Complete</b>
+	<ul>
+		<li><a href='#' id='run_complete'>Run Complete</a> <span id='run_complete-output'></span></li>
+	</ul>
+
+	<h1>General Operations</h1>
 	<ul>
 		<li><a href='#' style='color:red'id='shutdown'>Shut Down Controller</a> <span id='shutdown-output'></span></li>
 	</ul>
-	
+
 	</body>
 </html>

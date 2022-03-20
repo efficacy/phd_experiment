@@ -7,9 +7,11 @@ const SERVICE = "Control"
 const app = express()
 const dfl_port = 9999
 
-let status = 'OK'
+let status = { running: false, child: false, dut_ready: false, load_ready: false, session: null }
 app.get('/status', (req, res) => {
-  res.send(status)
+  let s = JSON.stringify(status)
+  console.log(`requested status, returned ${s}`)
+  res.send(s)
 })
 
 let requester = new Requester()
@@ -28,19 +30,97 @@ function measure() {
   return measurer
 }
 
+function run(session, callback) {
+  status.dut_ready = false
+  status.load_ready = false
+  requester.call(app.get('logger'), 'setup', `s=${session}`, (err) =>{
+    status.running = true
+    status.session = session
+    console.log(`starting measurement process `)
+    let process = measure()
+    status.child = true
+    app.set('measurer', process)
+    if (callback) callback(session)
+  })
+}
+
+app.get('/select', (req, res) => {
+  let scenario = req.query.scenario
+  let session = req.query.session
+  console.log(`select scanario ${scenario} session ${session}`)
+  status.dut_ready = false
+  status.load_ready = false
+  app.set('scenario', scenario)
+  app.set('session', session)
+  app.set('tag', `${scenario}/${session}`)
+  // TODO ssh to set up DUT, will callback on /dut_ready when done
+  // TODO ssh to set up LOAD, will callback on /load_ready when done
+  res.setHeader('Content-Type', 'text/plain')
+  res.send(`OK ${scenario}`)
+})
+
+app.get('/dut_ready', (req, res) => {
+  status.dut_ready = true
+  console.log(`DUT ready`)
+  if (status.load_ready) {
+    let tag = app.get('tag')
+    run(tag, () => {
+      res.setHeader('Content-Type', 'text/plain')
+      res.send(`OK Run ${tag}`)
+    })
+  } else {
+    res.setHeader('Content-Type', 'text/plain')
+    res.send('OK DUT')
+  }
+})
+
+app.get('/load_ready', (req, res) => {
+  status.load_ready = true
+  console.log(`LOAD ready`)
+  if (status.dut_ready) {
+    let tag = app.get('tag')
+    run(tag, () => {
+      res.setHeader('Content-Type', 'text/plain')
+      res.send(`OK Run ${tag}`)
+    })
+  } else {
+    res.setHeader('Content-Type', 'text/plain')
+    res.send('OK LOAD')
+  }
+})
+
 app.get('/run', (req, res) => {
   let session = req.query.s
-  requester.call(app.get('logger'), 'setup', `s=${session}`, (err) =>{
-    status = 'BUSY'
+  run(session, (session) => {
     res.setHeader('Content-Type', 'text/plain')
-    res.send(err || 'OK')
-    console.log(`starting dummy child`)
-    let process = measure()
-    setTimeout(() => {
-      process.kill('SIGINT')
+    res.send(err || `OK ${session}`)
+  })
+})
+
+function kill_measurer(app, callback) {
+  let process = app.get('measurer')
+  if (process) {
+    process.kill('SIGINT')
+    status.child = false
+    app.set('measurer', null)
+    console.log(`stopped measurement process`)
+  } else {
+    console.log(`measurement process not running`)
+  }
+  if (callback) {
+    callback()
+  }
+}
+
+app.get('/run_complete', (req, res) => {
+  requester.call(app.get('logger'), 'sutdown', '', (err) => {
+    kill_measurer(app, () => {
       console.log(`session complete`)
-      status = 'OK'
-    }, 20000)
+      status.running = false
+      status.session = null
+      res.setHeader('Content-Type', 'text/plain')
+      res.send('OK')
+    })
   })
 })
 
@@ -56,17 +136,23 @@ function init(port, callback) {
 }
 
 function shutdown() {
+  console.log('in shutdown')
   let service = app.get('service')
+  console.log('found service')
 
-  service.close(() => {
-    let client = app.get('client')
-    let settings = app.get('settings')
+  kill_measurer(app, () => {
+    console.log('measurer process killed')
+    service.close(() => {
+      console.log('service close callback')
+      let client = app.get('client')
+      let settings = app.get('settings')
 
-    client.deregister((err) => {
-      if (err) throw err
-      console.log(`* ${SERVICE} deregistered from Registry on ${settings.registry}`)
-      console.log(`* ${SERVICE} shutdown`)
-      process.exit();
+      client.deregister((err) => {
+        if (err) throw err
+        console.log(`* ${SERVICE} deregistered from Registry on ${settings.registry}`)
+        console.log(`* ${SERVICE} shutdown`)
+        process.exit();
+      })
     })
   })
 }
@@ -93,6 +179,7 @@ if (require.main === module) {
       })
     })
     app.set('service', service)
+    console.log(`set service to ${service}`)
   })
 }
 
