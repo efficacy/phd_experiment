@@ -24,7 +24,7 @@ app.get('/status', (req, res) => {
 
 app.get('/truncate', (req, res) => {
   let store = app.get('store')
-  console.log(`endpoint /truncate`)
+  // console.log(`endpoint /truncate`)
   store.truncate((err) => {
     res.setHeader('Content-Type', 'text/plain')
     res.send(err || 'OK')
@@ -33,7 +33,7 @@ app.get('/truncate', (req, res) => {
 
 app.get('/rebuild', (req, res) => {
   let store = app.get('store')
-  console.log(`endpoint /rebuild`)
+  // console.log(`endpoint /rebuild`)
   store.rebuild((err) => {
     res.setHeader('Content-Type', 'text/plain')
     res.send(err || 'OK')
@@ -44,7 +44,7 @@ app.get('/start', (req, res) => {
   let store = app.get('store')
   let scenario = req.query.scenario
   let session = req.query.session
-  console.log(`endpoint /start scenario=${scenario} session=${session}`)
+  // console.log(`endpoint /start scenario=${scenario} session=${session}`)
   store.start(scenario, session, (err) => {
     res.setHeader('Content-Type', 'text/plain')
     res.send(err || 'OK')
@@ -53,7 +53,7 @@ app.get('/start', (req, res) => {
 
 app.get('/stop', (req, res) => {
   let store = app.get('store')
-  console.log(`endpoint /stop`)
+  // console.log(`endpoint /stop`)
   store.stop((err) => {
     res.setHeader('Content-Type', 'text/plain')
     res.send(err || 'OK')
@@ -65,7 +65,7 @@ app.get('/log', (req, res) => {
   let stamp = req.query.t
   let voltage = req.query.v
   let current = req.query.i
-  console.log(`endpoint /log stamp=${stamp} v=${voltage} i=${current}`)
+  // console.log(`endpoint /log stamp=${stamp} v=${voltage} i=${current}`)
   store.append(voltage, current, (err) => {
     res.setHeader('Content-Type', 'text/plain')
     res.send(err || 'OK')
@@ -124,7 +124,7 @@ if (require.main === module) {
       console.log(`* ${SERVICE} listening on ${Config.toURL(settings)}`)
       app.get('client').register(true, (err, expiry, config) => {
         if (err) throw err
-        console.log(`* ${SERVICE} registered with Registry on ${settings.registry} renew in ${expiry - Date.now()}ms`)
+        if (verbose) console.log(`* ${SERVICE} registered with Registry on ${settings.registry} renew in ${expiry - Date.now()}ms`)
       })
     })
     app.set('service', service)

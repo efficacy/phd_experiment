@@ -42,7 +42,7 @@ def run(logger):
             t = int(time.time() * 1000)
             v = ina260.get_voltage()
             i = ina260.get_current()
-            url = logger + 'log?t=' + str(t) + '&v=' + str(v) + '&i=' + str(i)
+            url = logger + 'log?v=' + str(v) + '&i=' + str(i)
             res = requests.get(url)
             if res.status_code != 200:
                 print("error: " + str(res.status_code) + " " + str(res.content))

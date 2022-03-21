@@ -51,7 +51,7 @@ const Store = class {
         return new Store()
     }
     start(scenario, session, callback) {
-        console.log(`pg start scenario=${scenario} session=${session}`)
+        // console.log(`pg start scenario=${scenario} session=${session}`)
         this.state.scenario = scenario
         this.state.session = session
         this.pool.query('INSERT INTO session (scenario,session,start) values ($1,$2,localtimestamp)', [scenario, session], handle(callback))
@@ -60,11 +60,11 @@ const Store = class {
         if (callback) callback();
     }
     append(voltage, current, callback) {
-        console.log(`pg append v=${voltage} i=${current}`)
+        // console.log(`pg append v=${voltage} i=${current}`)
         this.pool.query('INSERT INTO log (t,v,i) values (localtimestamp,$1,$2)', [voltage, current], handle(callback))
     }
     stop(callback) {
-        console.log(`pg stop`)
+        // console.log(`pg stop`)
         let scenario = this.state.scenario
         let session = this.state.session
         this.pool.query('UPDATE session SET stop=localtimestamp WHERE scenario=$1 AND session=$2', [scenario, session], handle(callback))
