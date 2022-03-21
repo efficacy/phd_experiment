@@ -13,15 +13,17 @@ const FileLogStore = class {
     static create(filename) {
         return new FileLogStore(filename || 'log.csv')
     }
-    setup(name, callback) {
-        this.state.session = name
+    setup(scenario, session, callback) {
+        this.state.scenario = scenario
+        this.state.session = session
         if (callback) callback(null, `${this.state.session}`)
     }
     start(callback) {
         if (callback) callback();
     }
     append(stamp, voltage, current, callback) {
-        fs.writeFile(this.filename, `${this.state.session},${stamp},${voltage},${current}${os.EOL}`, ()=> {
+        let tag = `${this.state.scenario}/${this.state.session}`
+        fs.writeFile(this.filename, `${tag},${stamp},${voltage},${current}${os.EOL}`, ()=> {
             if (callback) callback()
         })
     }

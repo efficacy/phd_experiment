@@ -69,25 +69,6 @@
 			return false
 		})
 
-		var setup = document.getElementById('start');
-		catchSubmit(start, function(event) {
-			event.preventDefault();
-			var session = start.elements['session'].value.trim()
-			if (session) {
-				httpGet(`/run?s=${session}`, function(text) {
-					document.getElementById("start-output").innerHTML = text
-					getStatus();
-					setTimeout(() => {
-						document.getElementById('start-output').innerHTML = ''
-						start.elements['session'].value = ''
-					}, 1000)
-				})
-			} else {
-				document.getElementById("start-output").innerHTML = "Please supply valid session name"
-			}
-			return false
-		})
-
 	}
 	</script>
 
@@ -111,13 +92,6 @@
 		<li><a href='#' id='dut_ready'>DUT ready</a> <span id='dut_ready-output'></span></li>
 		<li><a href='#' id='load_ready'>LOAD ready</a> <span id='load_ready-output'></span></li>
 	</ul>
-
-	<b>Start Session</b>
-	<form id='start'>
-		<label for='session'>Session:</label>
-		<input type='text' id='session' name='session'/>
-		<button type="submit">Submit</button> <span id=start-output></span>
-	</form>
 
 	<b>Scenario Complete</b>
 	<ul>

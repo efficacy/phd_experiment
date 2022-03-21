@@ -7,9 +7,10 @@ const Store = class {
     static create(filename) {
         return new Store()
     }
-    setup(name, callback) {
-        this.state.session = name
-        if (callback) callback(`OK: ${state.session}`)
+    setup(scenario, session, callback) {
+        this.state.scenario = scenario
+        this.state.session = session
+        if (callback) callback(`OK: ${state.scenario}/${state.session}`)
     }
     start(callback) {
         if (callback) callback('OK');

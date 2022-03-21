@@ -30,10 +30,10 @@ function measure() {
   return measurer
 }
 
-function run(session, callback) {
+function run(scenario, session, callback) {
   status.dut_ready = false
   status.load_ready = false
-  requester.call(app.get('logger'), 'setup', `s=${session}`, (err) =>{
+  requester.call(app.get('logger'), 'setup', `scenario=${scenario}&session=${session}`, (err) =>{
     status.running = true
     status.session = session
     console.log(`starting measurement process `)
@@ -47,30 +47,30 @@ function run(session, callback) {
 app.get('/select', (req, res) => {
   let scenario = req.query.scenario
   let session = req.query.session
-  console.log(`select scanario ${scenario} session ${session}`)
+  console.log(`select scenario ${scenario} session ${session}`)
   status.dut_ready = false
   status.load_ready = false
   app.set('scenario', scenario)
   app.set('session', session)
-  app.set('tag', `${scenario}/${session}`)
-  // TODO ssh to set up DUT, will callback on /dut_ready when done
-  // TODO ssh to set up LOAD, will callback on /load_ready when done
+  // TODO ssh to set up DUT for scenario, will callback on /dut_ready when done
+  // TODO ssh to set up LOAD for scenario, will callback on /load_ready when done
   res.setHeader('Content-Type', 'text/plain')
-  res.send(`OK ${scenario}`)
+  res.send(`OK ${scenario}/${session}`)
 })
 
 app.get('/dut_ready', (req, res) => {
   status.dut_ready = true
   console.log(`DUT ready`)
   if (status.load_ready) {
-    let tag = app.get('tag')
-    run(tag, () => {
+    let scenario = app.get('scenario')
+    let session = app.get('session')
+      run(scenario, session, () => {
       res.setHeader('Content-Type', 'text/plain')
       res.send(`OK Run ${tag}`)
     })
   } else {
     res.setHeader('Content-Type', 'text/plain')
-    res.send('OK DUT')
+    res.send(`OK DUT READY`)
   }
 })
 
@@ -78,20 +78,22 @@ app.get('/load_ready', (req, res) => {
   status.load_ready = true
   console.log(`LOAD ready`)
   if (status.dut_ready) {
-    let tag = app.get('tag')
-    run(tag, () => {
+    let scenario = app.get('scenario')
+    let session = app.get('session')
+    run(scenario, session, () => {
       res.setHeader('Content-Type', 'text/plain')
-      res.send(`OK Run ${tag}`)
+      res.send(`OK Run ${scenario}/${session}`)
     })
   } else {
     res.setHeader('Content-Type', 'text/plain')
-    res.send('OK LOAD')
+    res.send('OK LOAD READY')
   }
 })
 
 app.get('/run', (req, res) => {
-  let session = req.query.s
-  run(session, (session) => {
+  let scenario = req.query.scenario
+  let session = req.query.session
+  run(scenario, session, (session) => {
     res.setHeader('Content-Type', 'text/plain')
     res.send(err || `OK ${session}`)
   })

@@ -1,8 +1,10 @@
 const Pool = require('pg').Pool
 
-const CREATE_TABLE = 
+const CREATE_TABLE =
 `CREATE TABLE log (
-    s varchar(32),
+    scenario varchar(32),
+    session varchar(32),
+    stamp datetime,
     t bigint,
     v double precision,
     i double precision
@@ -24,16 +26,19 @@ const Store = class {
     static create(filename) {
         return new Store()
     }
-    setup(name, callback) {
-        console.log(`pg store, setting session to ${name}`)
-        this.state.session = name
-        if (callback) callback(null, this.state.session)
+    setup(scenario, session, callback) {
+        this.state.scenario = scenario
+        this.state.session = session
+        let tag = `${this.state.scenario}/${this.state.session}`
+        console.log(`pg store, setting session to ${tag}`)
+        if (callback) callback(null, tag)
     }
     start(callback) {
         if (callback) callback();
     }
     append(stamp, voltage, current, callback) {
-        this.pool.query('INSERT INTO log (s,t,v,i) values ($1,$2,$3,$4)', [this.state.session, stamp, voltage, current],
+        let tag = `${this.state.scenario}/${this.state.session}`
+        this.pool.query('INSERT INTO log (s,t,v,i) values ($1,$2,$3,$4)', [tag, stamp, voltage, current],
             function (error, results) {
                 if (callback) {
                     if (error) {

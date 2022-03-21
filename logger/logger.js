@@ -43,8 +43,10 @@ app.get('/rebuild', (req, res) => {
 
 app.get('/setup', (req, res) => {
   let store = app.get('store')
-  let session = req.query.s
-  store.setup(session, (err) => {
+  let scenario = req.query.scenario
+  let session = req.query.session
+  console.log(`endpoint /setup scenario=${scenario} session=${session}`)
+  store.setup(scenario, session, (err) => {
     res.setHeader('Content-Type', 'text/plain')
     res.send(err || 'OK')
   })
