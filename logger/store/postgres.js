@@ -1,14 +1,38 @@
 const Pool = require('pg').Pool
 
 const CREATE_TABLE =
-`CREATE TABLE log (
+`DROP TABLE IF EXISTS log;
+CREATE TABLE log (
+    t timestamp,
+    v double precision,
+    i double precision,
+    PRIMARY KEY(t)
+);
+DROP TABLE IF EXISTS session;
+CREATE TABLE session (
     scenario varchar(32),
     session varchar(32),
-    stamp datetime,
-    t bigint,
-    v double precision,
-    i double precision
-)`
+    start timestamp,
+    stop timestamp,
+    PRIMARY KEY(scenario,session)
+);
+GRANT ALL ON log TO logger;
+GRANT ALL ON session TO logger;`
+
+function handle(callback, message) {
+    return function handle(error, results) {
+        if (callback) {
+            if (error) {
+                console.log(`db: ${error}`)
+                callback(error)
+            } else {
+                callback(message)
+            }
+        } else if (error) {
+            throw error
+        }
+    }
+}
 
 const Store = class {
     constructor() {
@@ -26,73 +50,48 @@ const Store = class {
     static create(filename) {
         return new Store()
     }
-    setup(scenario, session, callback) {
+    start(scenario, session, callback) {
+        console.log(`pg start scenario=${scenario} session=${session}`)
         this.state.scenario = scenario
         this.state.session = session
-        let tag = `${this.state.scenario}/${this.state.session}`
-        console.log(`pg store, setting session to ${tag}`)
-        if (callback) callback(null, tag)
-    }
-    start(callback) {
-        if (callback) callback();
-    }
-    append(stamp, voltage, current, callback) {
-        let tag = `${this.state.scenario}/${this.state.session}`
-        this.pool.query('INSERT INTO log (s,t,v,i) values ($1,$2,$3,$4)', [tag, stamp, voltage, current],
-            function (error, results) {
-                if (callback) {
-                    if (error) {
-                        callback(error)
-                    } else {
-                        callback()
-                    }
-                } else if (error) {
-                    throw error
-                }
-            })
+        this.pool.query('INSERT INTO session (scenario,session,start) values ($1,$2,localtimestamp)', [scenario, session], handle(callback))
     }
     stop(callback) {
         if (callback) callback();
     }
+    append(voltage, current, callback) {
+        console.log(`pg append v=${voltage} i=${current}`)
+        this.pool.query('INSERT INTO log (t,v,i) values (localtimestamp,$1,$2)', [voltage, current], handle(callback))
+    }
+    stop(callback) {
+        console.log(`pg stop`)
+        let scenario = this.state.scenario
+        let session = this.state.session
+        this.pool.query('UPDATE session SET stop=localtimestamp WHERE scenario=$1 AND session=$2', [scenario, session], handle(callback))
+    }
     status(callback) {
         let self = this
-        this.pool.query("SELECT count(*) FROM log AS count",
-            function (error, results) {
-                if (callback) {
-                    if (error) {
-                        callback(error)
-                    } else {
-                        let count = results.rows[0].count
-                        callback(null, self.state.session, count)
-                    }
-                } else if (error) {
-                    throw error
+        this.pool.query("SELECT count(*) FROM log AS count", (error, results) => {
+            if (callback) {
+                if (error) {
+                    callback(error)
+                } else {
+                    let count = results.rows[0].count
+                    callback(null, self.state.session, count)
                 }
-            })
+            } else if (error) {
+                throw error
+            }
+        })
     }
     truncate(callback) {
-        this.pool.query("TRUNCATE log",
-            function (error, results) {
-                if (callback) {
-                    callback(errpr)
-                } else if (error) {
-                    throw error
-                }
-            })
+        this.pool.query("TRUNCATE log", (error) => {
+            if (error) throw error
+            this.pool.query("TRUNCATE sessions", handle(callback))
+        })
     }
     rebuild(callback) {
-        this.pool.query("DROP TABLE IF EXISTS log",
-            function (error, results, fields) {
-                if (error) throw error
-                this.pool.query(CREATE_TABLE,
-                    function (error, results) {
-                        if (callback) {
-                            callback(error)
-                        } else if (error) {
-                            throw error
-                        }
-                    })
-            })
+        this.pool.query(CREATE_TABLE, handle(callback))
     }
     close(callback) {
         this.pool.end(callback)

@@ -13,7 +13,7 @@
 		};
 		xhr.send(null);
 	}
-	
+
 	function getStatus() {
 		httpGet('/status', function(status) {
 			var decoded = JSON.parse(status)
@@ -21,7 +21,7 @@
 			document.getElementById("status/count").innerHTML = decoded.count
 		})
 	}
-	
+
 	function catchSubmit(form, callback) {
 		if (form.attachEvent) {
 			form.attachEvent("submit", callback);
@@ -29,10 +29,23 @@
 			form.addEventListener("submit", callback);
 		}
 	}
-	
+
+	function catchClick(name) {
+		document.getElementById(name).addEventListener('click', event => {
+			event.preventDefault()
+			fetch(`/${name}`, {mode: 'cors'}).then((r)=>{r.text().then((s) => {
+				document.getElementById(`${name}-output`).innerHTML = s
+				setTimeout(() => {
+					document.getElementById(`${name}-output`).innerHTML = ''
+				}, 1000)
+				getStatus();
+			})})
+		})
+	}
+
 	window.onload = function() {
 		getStatus();
-	
+
 		var setup = document.getElementById('start');
 		catchSubmit(start, function(event) {
 			event.preventDefault();
@@ -51,7 +64,7 @@
 			}
 			return false
 		})
-	
+
 		var log = document.getElementById('log');
 		catchSubmit(log, function(event) {
 			event.preventDefault();
@@ -74,42 +87,16 @@
 			}
 			return false
 		})
-	
-		document.getElementById('truncate').addEventListener('click', event => {
-			event.preventDefault()
-			fetch('/truncate', {mode: 'cors'}).then((r)=>{r.text().then((s) => {
-				document.getElementById('truncate-output').innerHTML = s
-				setTimeout(() => {
-					document.getElementById('truncate-output').innerHTML = ''
-				}, 1000)
-				getStatus();
-			})})
-		})
-	
-		document.getElementById('rebuild').addEventListener('click', event => {
-			event.preventDefault()
-			fetch('/rebuild', {mode: 'cors'}).then((r)=>{r.text().then((s) => {
-				document.getElementById('rebuild-output').innerHTML = s
-				setTimeout(() => {
-					document.getElementById('rebuild-output').innerHTML = ''
-				}, 1000)
-				getStatus();
-			})})
-		})
-	
-		document.getElementById('shutdown').addEventListener('click', event => {
-			event.preventDefault()
-			fetch('/shutdown', {mode: 'cors'}).then((r)=>{r.text().then((s) => {
-				document.getElementById('shutdown-output').innerHTML = s
-				setTimeout(() => {
-					document.getElementById('shutdown-output').innerHTML = ''
-				}, 1000)
-				getStatus();
-			})})
-		})
+
+		catchClick('stop')
+
+		catchClick('truncate')
+		catchClick('rebuild')
+		catchClick('shutdown')
+
 	}
 	</script>
-	
+
 	<H1>Experiment Logger</h1>
 	<div id='status'>
 	<table>
@@ -118,14 +105,16 @@
 	</table>
 	</div>
 
-	<h1>Start Session</h1>
+	<h1>Experimemt Lifecycle</h1>
+
+	<b>Start Session</b>
 	<form id='start'>
 		<label for='session'>Session:</label>
 		<input type='text' id='session' name='session'/>
 		<button type="submit">Submit</button> <span id=start-output></span>
 	</form>
-	
-	<h1>Log</h1>
+
+	<b>Log</b>
 	<form id='log'>
 		<label for='stamp'>Time (<i>optional</i>):</label>
 		<input type='text' id='stamp' name='stamp'/><br/>
@@ -135,13 +124,18 @@
 		<input type='text' id='current' name='current'/>
 		<button type="submit">Submit</button> <span id=log-output></span>
 	</form>
-	
+
+	<b>Stop Session</b>
+	<ul>
+		<li><a href='#' id='stop'>Stop Current Session</a> <span id='stop-output'></span></li>
+	</ul>
+
 	<h1>General Operations</h1>
 	<ul>
 		<li><a href='#' id='truncate'>Truncate Log Table</a> <span id='truncate-output'></span></li>
 		<li><a href='#' id='rebuild'>Rebuild Log Table</a> <span id='rebuild-output'></span></li>
 		<li><a href='#' style='color:red'id='shutdown'>Shut Down Logger</a> <span id='shutdown-output'></span></li>
 	</ul>
-	
+
 	</body>
 </html>

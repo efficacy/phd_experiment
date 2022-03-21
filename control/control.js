@@ -33,7 +33,9 @@ function measure() {
 function run(scenario, session, callback) {
   status.dut_ready = false
   status.load_ready = false
-  requester.call(app.get('logger'), 'setup', `scenario=${scenario}&session=${session}`, (err) =>{
+  requester.call(app.get('logger'), 'start', `scenario=${scenario}&session=${session}`, (err) =>{
+    console.log(`run err=${err}`)
+    if (err) callback(err)
     status.running = true
     status.session = session
     console.log(`starting measurement process `)
@@ -44,10 +46,25 @@ function run(scenario, session, callback) {
   })
 }
 
-app.get('/select', (req, res) => {
+function kill_measurer(app, callback) {
+  let process = app.get('measurer')
+  if (process) {
+    process.kill('SIGINT')
+    status.child = false
+    app.set('measurer', null)
+    console.log(`stopped measurement process`)
+  } else {
+    console.log(`measurement process not running`)
+  }
+  if (callback) {
+    callback()
+  }
+}
+
+app.get('/start', (req, res) => {
   let scenario = req.query.scenario
   let session = req.query.session
-  console.log(`select scenario ${scenario} session ${session}`)
+  console.log(`start scenario ${scenario} session ${session}`)
   status.dut_ready = false
   status.load_ready = false
   app.set('scenario', scenario)
@@ -99,27 +116,12 @@ app.get('/run', (req, res) => {
   })
 })
 
-function kill_measurer(app, callback) {
-  let process = app.get('measurer')
-  if (process) {
-    process.kill('SIGINT')
-    status.child = false
-    app.set('measurer', null)
-    console.log(`stopped measurement process`)
-  } else {
-    console.log(`measurement process not running`)
-  }
-  if (callback) {
-    callback()
-  }
-}
-
 app.get('/run_complete', (req, res) => {
-  requester.call(app.get('logger'), 'sutdown', '', (err) => {
-    kill_measurer(app, () => {
-      console.log(`session complete`)
-      status.running = false
-      status.session = null
+  kill_measurer(app, () => {
+    console.log(`session complete`)
+    status.running = false
+    status.session = null
+    requester.call(app.get('logger'), 'stop', '', (err) => {
       res.setHeader('Content-Type', 'text/plain')
       res.send('OK')
     })

@@ -1,9 +1,6 @@
 const express = require('express')
 const { Roles, Client, Config } = require('../shared/main')
 const stores = {
-  // memory: require('./store/memory').create(),
-  // mysql: require('./store/mysql').create(),
-  files: require('./store/files').create(),
   postgres: require('./store/postgres').create()
 }
 
@@ -27,6 +24,7 @@ app.get('/status', (req, res) => {
 
 app.get('/truncate', (req, res) => {
   let store = app.get('store')
+  console.log(`endpoint /truncate`)
   store.truncate((err) => {
     res.setHeader('Content-Type', 'text/plain')
     res.send(err || 'OK')
@@ -35,18 +33,28 @@ app.get('/truncate', (req, res) => {
 
 app.get('/rebuild', (req, res) => {
   let store = app.get('store')
+  console.log(`endpoint /rebuild`)
   store.rebuild((err) => {
     res.setHeader('Content-Type', 'text/plain')
     res.send(err || 'OK')
   })
 })
 
-app.get('/setup', (req, res) => {
+app.get('/start', (req, res) => {
   let store = app.get('store')
   let scenario = req.query.scenario
   let session = req.query.session
-  console.log(`endpoint /setup scenario=${scenario} session=${session}`)
-  store.setup(scenario, session, (err) => {
+  console.log(`endpoint /start scenario=${scenario} session=${session}`)
+  store.start(scenario, session, (err) => {
+    res.setHeader('Content-Type', 'text/plain')
+    res.send(err || 'OK')
+  })
+})
+
+app.get('/stop', (req, res) => {
+  let store = app.get('store')
+  console.log(`endpoint /stop`)
+  store.stop((err) => {
     res.setHeader('Content-Type', 'text/plain')
     res.send(err || 'OK')
   })
@@ -57,7 +65,8 @@ app.get('/log', (req, res) => {
   let stamp = req.query.t
   let voltage = req.query.v
   let current = req.query.i
-  store.append(stamp, voltage, current, (err) => {
+  console.log(`endpoint /log stamp=${stamp} v=${voltage} i=${current}`)
+  store.append(voltage, current, (err) => {
     res.setHeader('Content-Type', 'text/plain')
     res.send(err || 'OK')
   })
@@ -78,9 +87,7 @@ function init(store, port, callback) {
     app.set('client', new Client(Roles.LOG, Config.toURL(settings)))
     app.set('settings', settings)
     app.set('store', store)
-    store.start((err) => {
-      if (callback) return callback(err, app, settings)
-    })
+    if (callback) return callback(null, app, settings)
   })
 }
 

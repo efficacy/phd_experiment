@@ -49,22 +49,22 @@
 		catchClick('run_complete')
 		catchClick('shutdown')
 
-		var select = document.getElementById('select');
-		catchSubmit(select, function(event) {
+		var start = document.getElementById('start');
+		catchSubmit(start, function(event) {
 			event.preventDefault();
-			var scenario = select.elements['scenario'].value.trim()
-			var session = select.elements['session'].value.trim()
+			let scenario = start.elements['scenario'].value.trim()
+			let session = start.elements['session'].value.trim()
 			if (session) {
-				httpGet(`/select?scenario=${scenario}&session=${session}`, function(text) {
-					document.getElementById("select-output").innerHTML = text
+				httpGet(`/start?scenario=${scenario}&session=${session}`, function(text) {
+					document.getElementById("start-output").innerHTML = text
 					getStatus();
 					setTimeout(() => {
-						document.getElementById('select-output').innerHTML = ''
-						select.elements['session'].value = ''
+						document.getElementById('start-output').innerHTML = ''
+						start.elements['session'].value = ''
 					}, 1000)
 				})
 			} else {
-				document.getElementById("select-output").innerHTML = "Please supply valid session name"
+				document.getElementById("start-output").innerHTML = "Please supply valid session name"
 			}
 			return false
 		})
@@ -79,12 +79,12 @@
 	<h1>Experimemt Lifecycle</h1>
 
 	<b>Select Scenario</b>
-	<form id='select'>
+	<form id='start'>
 		<label for='scenario'>Scenario:</label>
 		<input type='text' id='scenario' name='scenario'/>
 		<label for='session'>Session:</label>
 		<input type='text' id='session' name='session'/>
-		<button type="submit">Submit</button> <span id=select-output></span>
+		<button type="submit">Submit</button> <span id=start-output></span>
 	</form>
 
 	<b>Wait for Acknowledgement from devices</b>
