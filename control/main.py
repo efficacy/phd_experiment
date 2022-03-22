@@ -29,7 +29,7 @@ class RealINA260:
         return self.ina260.get_current()
 
 plat = platform.system_alias
-print('platform: ' + plat)
+print('platform: ' + plat[0])
 if plat == 'raspberrypi':
     from INA260_MINIMAL import INA260
     ina260 = RealINA260(0x40)
