@@ -20,7 +20,7 @@ const MemoryStore = class {
   static create() {
     return new MemoryStore()
   }
-  
+
   addIpAddressLease(role, address, when, callback) {
     this.leases[role] = {
       role: role,
@@ -56,6 +56,7 @@ const MemoryStore = class {
     var lease = this.leases[role]
     return callback(null, (!lease || lease.when < when) ? null : lease.address)
   }
+
   each(fn, callback) {
     Object.entries(this.leases).forEach((pair) => {
       let value = pair[1]
@@ -63,18 +64,20 @@ const MemoryStore = class {
     })
     return callback()
   }
-  reap(when, callback) {
+
+  reap(now, callback) {
     var active = {}
     Object.entries(this.leases).forEach((pair) => {
       let key = pair[0]
       let value = pair[1]
-      if (value.when < when) {
+      if (now < value.when) {
         active[key] = value
       }
     })
     this.leases = active
     return callback()
   }
+
   clear(callback) {
     this.leases = {}
     return callback()

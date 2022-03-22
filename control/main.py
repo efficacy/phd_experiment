@@ -52,9 +52,9 @@ def run(logger):
             dt = datetime.now()
             time_to_sleep = 1.0 - (dt.microsecond * 0.000001)
             time.sleep(time_to_sleep)
-    except signal.SIGINT:
-        print("Run complete")
     except KeyboardInterrupt:
+        pass
+    finally:
         print("Run complete")
 
 if __name__ == '__main__':

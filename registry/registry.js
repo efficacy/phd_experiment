@@ -108,6 +108,19 @@ app.get('/remove', (req, res) => {
   })
 })
 
+app.get('/reap', (req, res) => {
+  let store = app.get('store')
+
+  console.log(`* reap expired leases`)
+  store.reap(Date.now(), (err) => {
+    res.setHeader('Content-Type', 'text/plain')
+    if (err) {
+      return res.send(err)
+    }
+    res.send('OK')
+  })
+})
+
 app.get('/lookup', (req, res) => {
   let role = req.query.role
   let store = app.get('store')

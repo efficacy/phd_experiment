@@ -22,6 +22,19 @@
 		}
 	}
 
+	function catchClick(name) {
+		document.getElementById(name).addEventListener('click', event => {
+			event.preventDefault()
+			fetch(`/${name}`, {mode: 'cors'}).then((r)=>{r.text().then((s) => {
+				document.getElementById(`${name}-output`).innerHTML = s
+				setTimeout(() => {
+					document.getElementById(`${name}-output`).innerHTML = ''
+				}, 1000)
+				getStatus();
+			})})
+		})
+	}
+
 	function getStatus() {
 		httpGet('/status', function(text) {
       let response = JSON.parse(text)
@@ -119,27 +132,9 @@
 			return false
 		})
 
-		document.getElementById('clear').addEventListener('click', event => {
-			event.preventDefault()
-			fetch('/clear', {mode: 'cors'}).then((r)=>{r.text().then((s) => {
-				document.getElementById('clear-output').innerHTML = s
-				setTimeout(() => {
-					document.getElementById('clear-output').innerHTML = ''
-				}, 1000)
-				getStatus();
-			})})
-		})
-
-		document.getElementById('shutdown').addEventListener('click', event => {
-			event.preventDefault()
-			fetch('/shutdown', {mode: 'cors'}).then((r)=>{r.text().then((s) => {
-				document.getElementById('shutdown-output').innerHTML = s
-				setTimeout(() => {
-					document.getElementById('shutdown-output').innerHTML = ''
-				}, 1000)
-				getStatus();
-			})})
-		})
+    catchClick('reap')
+    catchClick('clear')
+    catchClick('shutdown')
 	}
 	</script>
 
@@ -175,6 +170,7 @@
 
 	<h1>General Operations</h1>
 	<ul>
+		<li><a href='#' id='reap'>Reap Expired Leases</a> <span id='reap-output'></span></li>
 		<li><a href='#' id='clear'>Clear Lease Table</a> <span id='clear-output'></span></li>
 		<li><a href='#' style='color:red'id='shutdown'>Shut Down Registry</a> <span id='shutdown-output'></span></li>
 	</ul>
