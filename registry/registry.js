@@ -161,7 +161,7 @@ app.get('/status', (req, res) => {
   var ret = { duration: getLeaseDurationInMillis('OTHER'), leases: [] }
   store.each((lease) => {
     let record = {
-      expiry: new Date(lease.when),
+      expiry: lease.when,
       status: lease.status,
       role: lease.role,
       address: lease.address
@@ -220,7 +220,7 @@ function init(store, port, callback) {
 }
 
 if (require.main === module) {
-  init(stores.memory, dfl_port, (err, app, settings) => {
+  init(stores.files, dfl_port, (err, app, settings) => {
     if (err) throw err
     let ret = app.listen(settings.port, () => {
       console.log(`* Registry (Primary) listening on ${Config.toURL(settings)}`)

@@ -39,16 +39,15 @@
 		httpGet('/status', function(text) {
       let response = JSON.parse(text)
       let now = Date.now()
-      let ret = "<table border='1'><tr><th>Name</th><th>Address</th><th>Status</th><th>Operations</th></tr>\n"
+      let ret = "<table border='1'><tr><th>Name</th><th>Address</th><th>Expiry</th><th>Status</th><th>Operations</th></tr>\n"
       for (const lease of response.leases) {
-        let expiry = new Date(lease.when)
-        // .format("yyyy-mm-dd HH:MM:ss l")
-        let status = lease.status
-        if (status == 'ACTIVE' && lease.when < now) {
-          status = 'EXPIRED'
+        if (now > lease.expiry) {
+          lease.status = 'EXPIRED'
         }
 
-        ret += `<tr><td>${lease.role}</td><td>${lease.address}</td><td>${status}</td>\n`
+        let d = new Date(lease.expiry)
+        let expiry = `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()} ${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}`
+        ret += `<tr><td>${lease.role}</td><td>${lease.address}</td><td>${expiry}</td><td>${lease.status}</td>\n`
         ret += `<td>
         <a href='#' onclick='deregister("${lease.role}", "output-${lease.role}")'>deregister</a>
         <a href='#' onclick='remove("${lease.role}", "output-${lease.role}")'>remove</a>

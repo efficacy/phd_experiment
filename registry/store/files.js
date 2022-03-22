@@ -82,7 +82,7 @@ const FileStore = class {
       })
     })
   }
- 
+
   getAddress(role, when, callback) {
     this.fetch((err) => {
       if (err) return callback(err)
@@ -107,43 +107,57 @@ const FileStore = class {
     })
   }
 
-  fetch(callback) {
-    if (this.loaded) return callback()
-    if (!fs.existsSync(this.filename)) return callback(`file ${this.filename} does not exist`)
-    fs.readFile(this.filename, 'utf8', (err, content) => {
-      if (err) return step(err)
-      async.each(content.split(/\r?\n/), (line, step) => {
-        if (line.trim().length > 0) {
-          var parts = line.split(',')
-          this.cache.addIpAddressLease(parts[0], parts[1], parseInt(parts[2]), step)
-        } else {
-          return step()
-        }
-      }, (err) => {
-        this.loaded = true
-        return callback(err)
-      })
+  parse(content, callback) {
+    async.each(content.split(/\r?\n/), (line, step) => {
+      if (line.trim().length > 0) {
+        let parts = line.split(',')
+        let role = parts[0]
+        let address = parts[1]
+        let when = parseInt(parts[2])
+        // console.log(`loading lease role:${role} address:${address} when:${when}`)
+        this.cache.addIpAddressLease(role, address, when, step)
+      } else {
+        return step()
+      }
+    }, (err) => {
+      this.loaded = true
+      return callback(err)
     })
   }
 
+  fetch(callback) {
+    if (this.loaded) return callback()
+    if (!fs.existsSync(this.filename)) {
+      this.parse('', callback)
+    } else {
+      fs.readFile(this.filename, 'utf8', (err, content) => {
+        if (err) return callback(err)
+        this.parse(content, callback)
+      })
+    }
+  }
+
   flush(callback) {
+    let self = this
     var buf = ''
-    async.each(this.cache, (lease, step) => {
+    async.each(this.cache.leases, (lease, step) => {
+      console.log(`saving lease ${JSON.stringify(lease)}`)
       buf += `${lease.role},${lease.address},${lease.when}\n`
       return step()
     }, () => {
-      fs.writeFile(this.filename, buf, ()=> {
+      fs.writeFile(self.filename, buf, ()=> {
         return callback()
       })
     })
   }
 
   clear(callback) {
+    let self = this
     this.fetch((err) => {
       if (err) return callback(err)
-      return fs.unlink(this.filename, (err) => {
+      return fs.unlink(self.filename, (err) => {
         if (err instanceof Error && err.code == 'ENOENT') err = null
-        this.cache.clear(callback)
+        self.cache.clear(callback)
       })
     })
   }
