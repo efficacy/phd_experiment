@@ -28,7 +28,7 @@ class RealINA260:
     def get_current(self):
         return self.ina260.get_current()
 
-plat = platform.uname().node
+plat = platform.system_alias
 print('platform: ' + plat)
 if plat == 'raspberrypi':
     from INA260_MINIMAL import INA260
