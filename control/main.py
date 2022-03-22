@@ -29,13 +29,14 @@ class RealINA260:
         return self.ina260.get_current()
 
 plat = platform.uname().node
+print('platform: ' + plat)
 if plat == 'raspberrypi':
     from INA260_MINIMAL import INA260
     ina260 = RealINA260(0x40)
     print('measuring using real INA260')
 else:
     ina260 = DummyINA260()
-    print('measuring using real INA260')
+    print('measuring using dummy INA260')
 
 def run(logger):
     running = True
