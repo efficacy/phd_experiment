@@ -24,7 +24,26 @@
 
 	function getStatus() {
 		httpGet('/status', function(text) {
-			document.getElementById("status").innerHTML = text
+      let response = JSON.parse(text)
+      let now = Date.now()
+      let ret = "<table border='1'><tr><th>Name</th><th>Address</th><th>Status</th><th>Operations</th></tr>\n"
+      for (const lease of response.leases) {
+        let expiry = new Date(lease.when)
+        // .format("yyyy-mm-dd HH:MM:ss l")
+        let status = lease.status
+        if (status == 'ACTIVE' && lease.when < now) {
+          status = 'EXPIRED'
+        }
+
+        ret += `<tr><td>${lease.role}</td><td>${lease.address}</td><td>${status}</td>\n`
+        ret += `<td>
+        <a href='#' onclick='deregister("${lease.role}", "output-${lease.role}")'>deregister</a>
+        <a href='#' onclick='remove("${lease.role}", "output-${lease.role}")'>remove</a>
+        <span id="output-${lease.role}"></span>
+        </td></tr>\n`
+      }
+      ret += `</table><i>Lease duration: ${response.duration} milliseconds</i>`
+      document.getElementById("status").innerHTML = ret
 		})
 	}
 

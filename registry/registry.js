@@ -145,26 +145,19 @@ app.get('/status', (req, res) => {
   }
 
   let now = Date.now()
-  var ret = "<table border='1'><tr><th>Name</th><th>Address</th><th>Status</th><th>Operations</th></tr>\n"
+  var ret = { duration: getLeaseDurationInMillis('OTHER'), leases: [] }
   store.each((lease) => {
-    let expiry = new Date(lease.when)
-    // .format("yyyy-mm-dd HH:MM:ss l")
-    let status = lease.status
-    if (status == 'ACTIVE' && lease.when < now) {
-      status = 'EXPIRED'
+    let record = {
+      expiry: new Date(lease.when),
+      status: lease.status,
+      role: lease.role,
+      address: lease.address
     }
-
-    ret += `<tr><td>${lease.role}</td><td>${lease.address}</td><td>${status}</td>\n`
-    ret += `<td>
-    <a href='#' onclick='deregister("${lease.role}", "output-${lease.role}")'>deregister</a>
-    <a href='#' onclick='remove("${lease.role}", "output-${lease.role}")'>remove</a>
-    <span id="output-${lease.role}"></span>
-    </td></tr>\n`
+    ret.leases.push(record)
   }, (err) => {
-    duration = getLeaseDurationInMillis('OTHER')
-    ret += `</table><i>Lease duration: ${duration} milliseconds</i>`
-    res.setHeader('Content-Type', 'text/html')
-    res.send(ret)
+    res.setHeader('Content-Type', 'application/json')
+    let response = JSON.stringify(ret)
+    res.send(response)
   })
 })
 
