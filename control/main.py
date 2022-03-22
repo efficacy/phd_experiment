@@ -29,8 +29,8 @@ class RealINA260:
         return self.ina260.get_current()
 
 plat = platform.machine()
-print('platform: ' + str(plat))
-if plat == 'raspberrypi':
+print('running on platform: ' + str(plat))
+if plat.startswith('arm'):
     from INA260_MINIMAL import INA260
     ina260 = RealINA260(0x40)
     print('measuring using real INA260')
@@ -52,9 +52,9 @@ def run(logger):
             dt = datetime.now()
             time_to_sleep = 1.0 - (dt.microsecond * 0.000001)
             time.sleep(time_to_sleep)
-    except KeyboardInterrupt:
-        print("Run complete")
     except signal.SIGINT:
+        print("Run complete")
+    except KeyboardInterrupt:
         print("Run complete")
 
 if __name__ == '__main__':
