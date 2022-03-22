@@ -93,6 +93,21 @@ app.get('/deregister', (req, res) => {
   })
 })
 
+app.get('/remove', (req, res) => {
+  let role = req.query.role
+  let address = req.query.address
+  let store = app.get('store')
+
+  console.log(`* remove role=${role} address=${address}`)
+  store.removeIpAddressLease(role, address, (err) => {
+    res.setHeader('Content-Type', 'text/plain')
+    if (err) {
+      return res.send(err)
+    }
+    res.send('OK')
+  })
+})
+
 app.get('/lookup', (req, res) => {
   let role = req.query.role
   let store = app.get('store')
@@ -140,7 +155,11 @@ app.get('/status', (req, res) => {
     }
 
     ret += `<tr><td>${lease.role}</td><td>${lease.address}</td><td>${status}</td>\n`
-    ret += `<td><a href='#' onclick='remove("${lease.role}", "output-${lease.role}")'>remove</a> <span id="output-${lease.role}"></span></td></tr>\n`
+    ret += `<td>
+    <a href='#' onclick='deregister("${lease.role}", "output-${lease.role}")'>deregister</a>
+    <a href='#' onclick='remove("${lease.role}", "output-${lease.role}")'>remove</a>
+    <span id="output-${lease.role}"></span>
+    </td></tr>\n`
   }, (err) => {
     duration = getLeaseDurationInMillis('OTHER')
     ret += `</table><i>Lease duration: ${duration} milliseconds</i>`

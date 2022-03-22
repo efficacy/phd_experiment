@@ -13,7 +13,7 @@
 		};
 		xhr.send(null);
 	}
-	
+
 	function catchSubmit(form, callback) {
 		if (form.attachEvent) {
 			form.attachEvent("submit", callback);
@@ -21,13 +21,25 @@
 			form.addEventListener("submit", callback);
 		}
 	}
-	
+
 	function getStatus() {
 		httpGet('/status', function(text) {
 			document.getElementById("status").innerHTML = text
 		})
 	}
-	
+
+	function deregister(role, output) {
+		event.preventDefault()
+		fetch(`/deregister?role=${role}`, {mode: 'cors'}).then((r)=>{r.text().then((s) => {
+			let dest = document.getElementById(output)
+			dest.innerHTML = s
+			setTimeout(() => {
+				dest.innerHTML = ''
+				getStatus();
+			}, 1000)
+		})})
+	}
+
 	function remove(role, output) {
 		event.preventDefault()
 		fetch(`/remove?role=${role}`, {mode: 'cors'}).then((r)=>{r.text().then((s) => {
@@ -39,10 +51,10 @@
 			}, 1000)
 		})})
 	}
-	
+
 	window.onload = function() {
 		getStatus();
-	
+
 		var register = document.getElementById('register');
 		catchSubmit(register, function(event) {
 			event.preventDefault();
@@ -58,7 +70,7 @@
 			}
 			return false
 		})
-	
+
 		var lookup = document.getElementById('lookup');
 		catchSubmit(lookup, function(event) {
 			event.preventDefault();
@@ -72,7 +84,7 @@
 			}
 			return false
 		})
-	
+
 		var lease = document.getElementById('lease');
 		catchSubmit(lease, function(event) {
 			event.preventDefault();
@@ -87,7 +99,7 @@
 			}
 			return false
 		})
-	
+
 		document.getElementById('clear').addEventListener('click', event => {
 			event.preventDefault()
 			fetch('/clear', {mode: 'cors'}).then((r)=>{r.text().then((s) => {
@@ -98,7 +110,7 @@
 				getStatus();
 			})})
 		})
-	
+
 		document.getElementById('shutdown').addEventListener('click', event => {
 			event.preventDefault()
 			fetch('/shutdown', {mode: 'cors'}).then((r)=>{r.text().then((s) => {
@@ -111,7 +123,7 @@
 		})
 	}
 	</script>
-	
+
 	<div id=mode></div>
 	<H1>Experiment Registry</h1>
 	<div id='status'>
@@ -125,7 +137,7 @@
 		<button type="submit">Submit</button>
 	</form>
 	<div id=regout></div>
-	
+
 	<h1>Lookup</h1>
 	<form id='lookup'>
 		<label for='role'>Role:</label>
@@ -133,7 +145,7 @@
 		<button type="submit">Submit</button>
 	</form>
 	<div id=lookout></div>
-	
+
 	<h1>Set Default Lease</h1>
 	<form id='lease'>
 		<label for='duration'>Duration:</label>
@@ -141,12 +153,12 @@
 		<button type="submit">Submit</button>
 	</form>
 	<div id=leaseout></div>
-	
+
 	<h1>General Operations</h1>
 	<ul>
 		<li><a href='#' id='clear'>Clear Lease Table</a> <span id='clear-output'></span></li>
 		<li><a href='#' style='color:red'id='shutdown'>Shut Down Registry</a> <span id='shutdown-output'></span></li>
 	</ul>
-	
+
 	</body>
 </html>

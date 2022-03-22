@@ -41,6 +41,16 @@ const MemoryStore = class {
     }
   }
 
+  removeIpAddressLease(role, address, callback) {
+    //TODO support multiple addresses for a single role
+    if (role in this.leases) {
+      delete this.leases[role]
+      return callback()
+    } else {
+      return callback('No registration for ${role}')
+    }
+  }
+
   getAddress(role, when, callback) {
     when = when || Date.now()
     var lease = this.leases[role]

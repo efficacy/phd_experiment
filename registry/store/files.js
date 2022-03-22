@@ -73,6 +73,15 @@ const FileStore = class {
       })
     })
   }
+
+  removeIpAddressLease(role, address, callback) {
+    this.fetch((err) => {
+      if (err) return callback(err)
+      this.cache.removeIpAddressLease(role, address, (err) => {
+        this.flush(callback)
+      })
+    })
+  }
  
   getAddress(role, when, callback) {
     this.fetch((err) => {
