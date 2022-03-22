@@ -5,6 +5,7 @@ const stores = {
 }
 
 const SERVICE = "Logger"
+const VERBOSE = false
 
 const app = express()
 const dfl_port = 9996
@@ -124,7 +125,7 @@ if (require.main === module) {
       console.log(`* ${SERVICE} listening on ${Config.toURL(settings)}`)
       app.get('client').register(true, (err, expiry, config) => {
         if (err) throw err
-        if (verbose) console.log(`* ${SERVICE} registered with Registry on ${settings.registry} renew in ${expiry - Date.now()}ms`)
+        if (VERBOSE) console.log(`* ${SERVICE} registered with Registry on ${settings.registry} renew in ${expiry - Date.now()}ms`)
       })
     })
     app.set('service', service)
