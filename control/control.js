@@ -10,7 +10,7 @@ const dfl_port = 9999
 let status = { running: false, child: false, dut_ready: false, load_ready: false, session: null }
 app.get('/status', (req, res) => {
   let s = JSON.stringify(status)
-  console.log(`requested status, returned ${s}`)
+  // console.log(`requested status, returned ${s}`)
   res.send(s)
 })
 
@@ -183,7 +183,6 @@ if (require.main === module) {
       })
     })
     app.set('service', service)
-    console.log(`set service to ${service}`)
   })
 }
 
