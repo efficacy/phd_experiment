@@ -6,11 +6,12 @@ const SERVICE = "Control"
 
 const app = express()
 const dfl_port = 9999
+let VERBOSE = process.env.VERBOSE || false
 
 let status = { running: false, child: false, dut_ready: false, load_ready: false, scenario: null, session: null }
 app.get('/status', (req, res) => {
   let s = JSON.stringify(status)
-  // console.log(`requested status, returned ${s}`)
+  if (VERBOSE) console.log(`requested status, returned ${s}`)
   res.send(s)
 })
 
@@ -121,6 +122,7 @@ app.get('/run_complete', (req, res) => {
   kill_measurer(app, () => {
     console.log(`session complete`)
     status.running = false
+    status.scenario = null
     status.session = null
     requester.call(app.get('logger'), 'stop', '', (err) => {
       res.setHeader('Content-Type', 'text/plain')

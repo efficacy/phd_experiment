@@ -15,8 +15,15 @@
 	}
 
 	function getStatus() {
-		httpGet('/status', function(status) {
-			document.getElementById("status").innerHTML = status
+		httpGet('/status', function(text) {
+      let response = JSON.parse(text)
+      let now = Date.now()
+      let ret = "<table border='1'><tr><th>Name</th><th>Status</th></tr>\n"
+      for (key in response) {
+        ret += `<tr><td><b>${key}</b></td><td>${response[key]}</td></tr>`
+      }
+      ret += `</table>`
+      document.getElementById("status").innerHTML = ret
 		})
 	}
 
