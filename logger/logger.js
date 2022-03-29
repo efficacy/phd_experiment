@@ -5,10 +5,11 @@ const stores = {
 }
 
 const SERVICE = "Logger"
-const VERBOSE = false
 
 const app = express()
 const dfl_port = 9996
+
+let VERBOSE = process.env.VERBOSE || false
 
 app.get('/status', (req, res) => {
   let store = app.get('store')
@@ -25,7 +26,7 @@ app.get('/status', (req, res) => {
 
 app.get('/truncate', (req, res) => {
   let store = app.get('store')
-  // console.log(`endpoint /truncate`)
+  if (VERBOSE) console.log(`endpoint /truncate`)
   store.truncate((err) => {
     res.setHeader('Content-Type', 'text/plain')
     res.send(err || 'OK')
@@ -34,7 +35,7 @@ app.get('/truncate', (req, res) => {
 
 app.get('/rebuild', (req, res) => {
   let store = app.get('store')
-  // console.log(`endpoint /rebuild`)
+  if (VERBOSE) console.log(`endpoint /rebuild`)
   store.rebuild((err) => {
     res.setHeader('Content-Type', 'text/plain')
     res.send(err || 'OK')
@@ -45,7 +46,7 @@ app.get('/start', (req, res) => {
   let store = app.get('store')
   let scenario = req.query.scenario
   let session = req.query.session
-  // console.log(`endpoint /start scenario=${scenario} session=${session}`)
+  if (VERBOSE) console.log(`endpoint /start scenario=${scenario} session=${session}`)
   store.start(scenario, session, (err) => {
     res.setHeader('Content-Type', 'text/plain')
     res.send(err || 'OK')
@@ -54,7 +55,7 @@ app.get('/start', (req, res) => {
 
 app.get('/stop', (req, res) => {
   let store = app.get('store')
-  // console.log(`endpoint /stop`)
+  if (VERBOSE) console.log(`endpoint /stop`)
   store.stop((err) => {
     res.setHeader('Content-Type', 'text/plain')
     res.send(err || 'OK')
@@ -66,7 +67,7 @@ app.get('/log', (req, res) => {
   let stamp = req.query.t
   let voltage = req.query.v
   let current = req.query.i
-  // console.log(`endpoint /log stamp=${stamp} v=${voltage} i=${current}`)
+  if (VERBOSE) console.log(`endpoint /log stamp=${stamp} v=${voltage} i=${current}`)
   store.append(voltage, current, (err) => {
     res.setHeader('Content-Type', 'text/plain')
     res.send(err || 'OK')
