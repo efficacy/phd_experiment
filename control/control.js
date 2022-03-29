@@ -7,7 +7,7 @@ const SERVICE = "Control"
 const app = express()
 const dfl_port = 9999
 
-let status = { running: false, child: false, dut_ready: false, load_ready: false, session: null }
+let status = { running: false, child: false, dut_ready: false, load_ready: false, scenario: null, session: null }
 app.get('/status', (req, res) => {
   let s = JSON.stringify(status)
   // console.log(`requested status, returned ${s}`)
@@ -37,6 +37,7 @@ function run(scenario, session, callback) {
     console.log(`run err=${err}`)
     if (err) callback(err)
     status.running = true
+    status.scenario = scenario
     status.session = session
     console.log(`starting measurement process `)
     let process = measure()
