@@ -46,7 +46,7 @@ def run(logger):
             v = ina260.get_voltage()
             i = ina260.get_current()
             url = logger + 'log?v=' + str(v) + '&i=' + str(i)
-            print("send: " + url)
+            # print("send: " + url)
             res = requests.get(url)
             if res.status_code != 200:
                 print("error: " + str(res.status_code) + " " + str(res.content))
