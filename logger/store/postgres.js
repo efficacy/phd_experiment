@@ -3,7 +3,7 @@ const Pool = require('pg').Pool
 const CREATE_TABLE =
 `DROP TABLE IF EXISTS log;
 CREATE TABLE log (
-    t timestamp,
+    t timestamptz,
     v double precision,
     i double precision,
     PRIMARY KEY(t)
@@ -12,8 +12,8 @@ DROP TABLE IF EXISTS session;
 CREATE TABLE session (
     scenario varchar(32),
     session varchar(32),
-    start timestamp,
-    stop timestamp,
+    start timestamptz,
+    stop timestamptz,
     PRIMARY KEY(scenario,session)
 );
 GRANT ALL ON log TO logger;
