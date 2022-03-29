@@ -83,7 +83,7 @@ app.get('/dut_ready', (req, res) => {
     let session = app.get('session')
       run(scenario, session, () => {
       res.setHeader('Content-Type', 'text/plain')
-      res.send(`OK Run ${tag}`)
+      res.send(`OK Run ${scenario}/${session}`)
     })
   } else {
     res.setHeader('Content-Type', 'text/plain')
