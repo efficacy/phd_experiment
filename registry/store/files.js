@@ -141,7 +141,7 @@ const FileStore = class {
     let self = this
     var buf = ''
     async.each(this.cache.leases, (lease, step) => {
-      console.log(`saving lease ${JSON.stringify(lease)}`)
+      // console.log(`saving lease ${JSON.stringify(lease)}`)
       buf += `${lease.role},${lease.address},${lease.when}\n`
       return step()
     }, () => {
