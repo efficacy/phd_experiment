@@ -4,6 +4,10 @@
 	</head>
 	<body>
 	<script>
+    const POLL_INTERVAL = 1000 // 1 second
+    const QUERY_INTERVAL = 60000 // 1 minute
+    let next_poll = false
+
 	function httpGet(url, callback)
 	{
 		var xhr = new XMLHttpRequest();
@@ -38,11 +42,33 @@
 		})
 	}
 
+
+  function poll() {
+    let now = Date.now()
+    if (now > next_poll) {
+      next_poll = now + POLL_INTERVAL
+      // console.log(`scheduling next getStatus in ${POLL_INTERVAL}ms`)
+      setTimeout(getStatus, POLL_INTERVAL)
+    } else {
+      // console.log(`attempt to poll too soon`)
+    }
+  }
+
+  function pad(s) {
+    return ("0" + s).slice(-2)
+  }
+
+  function fdate(d) {
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+  }
+
 	function getStatus(callback) {
 		httpGet('/status', function(text) {
       let response = JSON.parse(text)
       let now = Date.now()
-      let ret = "<table border='1'><tr><th>Name</th><th>Address</th><th>Expiry</th><th>Remaining</th><th>Operations</th></tr>\n"
+      let ret = `Status at ${fdate(new Date(now))}\n
+      <table border='1'><tr><th>Name</th><th>Address</th><th>Expiry</th><th>Remaining</th><th>Operations</th></tr>\n`
+      let active = false;
       for (const lease of response.leases) {
         let remaining
         if (now > lease.expiry) {
@@ -50,10 +76,10 @@
         } else {
           let diff = Math.round((lease.expiry - now) / 1000)
           remaining = `${diff} secs`
+          active = true
         }
 
-        let d = new Date(lease.expiry)
-        let expiry = `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()} ${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}`
+        let expiry = `${fdate(new Date(lease.expiry))}`
         ret += `<tr><td>${lease.role}</td><td>${lease.address}</td><td>${expiry}</td><td>${remaining}</td>\n`
         ret += `<td>
         <a href='#' onclick='deregister("${lease.role}", "output-${lease.role}")'>deregister</a>
@@ -63,6 +89,11 @@
       }
       ret += `</table><i>Lease duration: ${response.duration} milliseconds</i>`
       document.getElementById("status").innerHTML = ret
+      if (active) {
+        poll() // the method prevents firing too many sequences
+      } else {
+        setTimeout(getStatus, QUERY_INTERVAL) // check more slowly in case anything has registered "behind the scenes"
+      }
       if (callback) callback('OK')
 		})
 	}
