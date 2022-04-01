@@ -162,7 +162,10 @@
 			var duration = lease.elements['duration'].value
 			if (duration.trim()) {
 			  alert(' set lease ' + duration )
-        getStatus();
+        httpGet('/status?duration='+duration, function(text) {
+          getStatus();
+				})
+
 			} else {
 				document.getElementById("leaseout").innerHTML = "Please supply valid duration"
 			}
