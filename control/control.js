@@ -40,6 +40,7 @@ function run(scenario, session, callback) {
     status.running = true
     status.scenario = scenario
     status.session = session
+
     console.log(`starting measurement process `)
     let process = measure()
     status.child = true
@@ -143,21 +144,18 @@ function init(port, callback) {
 }
 
 function shutdown() {
-  console.log('in shutdown')
+  console.log(`*${new Date()} ${SERVICE} in shutdown`)
   let service = app.get('service')
-  console.log('found service')
 
   kill_measurer(app, () => {
-    console.log('measurer process killed')
     service.close(() => {
-      console.log('service close callback')
       let client = app.get('client')
       let settings = app.get('settings')
 
       client.deregister((err) => {
         if (err) throw err
-        console.log(`* ${SERVICE} deregistered from Registry on ${settings.registry}`)
-        console.log(`* ${SERVICE} shutdown`)
+        console.log(`*{new Date()} ${SERVICE} deregistered from Registry on ${settings.registry}`)
+        console.log(`*{new Date()} ${SERVICE} shutdown`)
         process.exit();
       })
     })
@@ -165,6 +163,7 @@ function shutdown() {
 }
 
 if (require.main === module) {
+  console.log('--------')
   let exiting = false
 
   process.on('SIGINT', () => {
@@ -175,13 +174,13 @@ if (require.main === module) {
   init(dfl_port, (err, app, settings) => {
     if (err) throw err
     let service = app.listen(settings.port, () => {
-      console.log(`* ${SERVICE} listening on ${Config.toURL(settings)}`)
+      console.log(`*${new Date()} ${SERVICE} listening on ${Config.toURL(settings)}`)
       app.get('client').register(true, (err, expiry, config) => {
         if (err) throw err
-        console.log(`* ${SERVICE} registered with Registry on ${settings.registry} renew in ${expiry - Date.now()}ms`)
+        console.log(`*${new Date()} ${SERVICE} registered with Registry on ${settings.registry} renew in ${expiry - Date.now()}ms`)
       })
       app.get('client').lookup(Roles.LOG, settings, (endpoint) => {
-        console.log(`looked up logger: ${endpoint}`)
+        console.log(`*${new Date()} ${SERVICE} looked up logger: ${endpoint}`)
         app.set('logger', endpoint)
       })
     })
