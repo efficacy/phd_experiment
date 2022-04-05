@@ -132,12 +132,20 @@ app.get('/run_complete', (req, res) => {
   })
 })
 
+app.get('/shutdown', (req, res) => {
+  res.setHeader('Content-Type', 'text/plain')
+  res.send(`OK`)
+  shutdown()
+})
+
 function command(endpoint, script) {
   hostname,port = endpoint.split(':')
   console.log(`sending ${script} to ${host}`)
 }
 
-app.get('/safe_shutdown', (req, res) => {
+app.get('/powerdown', (req, res) => {
+  let settings = app.get('settings')
+
   app.get('client').lookup(Roles.LOAD, settings, (endpoint) => {
     command(endpoint, `sudo shutdown now`)
   })
