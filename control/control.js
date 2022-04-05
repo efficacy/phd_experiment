@@ -1,6 +1,9 @@
 const express = require('express')
 const { Roles, Client, Config, Requester } = require('../shared/main')
 const { spawn, exec } = require('child_process');
+const {NodeSSH} = require('node-ssh')
+
+const ssh = new NodeSSH()
 
 const SERVICE = "Control"
 
@@ -139,8 +142,19 @@ app.get('/shutdown', (req, res) => {
 })
 
 function command(endpoint, script) {
+  let home = process.env.HOME
   let host,port = endpoint.split(':')
-  console.log(`sending ${script} to ${host}`)
+  ssh.connect({
+    host: host,
+    username: 'pi',
+    privateKey: '${home}/.ssh/id_rsa'
+  }).then(() => {
+    console.log(`sending ${script} to ${host}`)
+    ssh.execCommand(`echo ${script}`).then(function(result) {
+      console.log('STDOUT: ' + result.stdout)
+      console.log('STDERR: ' + result.stderr)
+    })
+  })
 }
 
 app.get('/powerdown', (req, res) => {
@@ -154,7 +168,7 @@ app.get('/powerdown', (req, res) => {
   })
   shutdown(() => {
     console.log(`All those moments will be lost in time, like tears in rain... Time to die.`)
-    exec(`sudo shutdown now`)
+    exec(`echo sudo shutdown now`)
   })
 })
 
