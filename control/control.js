@@ -1,6 +1,6 @@
 const express = require('express')
 const { Roles, Client, Config, Requester } = require('../shared/main')
-const { spawn } = require('child_process');
+const { spawn, exec } = require('child_process');
 
 const SERVICE = "Control"
 
@@ -132,6 +132,24 @@ app.get('/run_complete', (req, res) => {
   })
 })
 
+function command(endpoint, script) {
+  hostname,port = endpoint.split(':')
+  console.log(`sending ${script} to ${host}`)
+}
+
+app.get('/safe_shutdown', (req, res) => {
+  app.get('client').lookup(Roles.LOAD, settings, (endpoint) => {
+    command(endpoint, `sudo shutdown now`)
+  })
+  app.get('client').lookup(Roles.DUT, settings, (endpoint) => {
+    command(endpoint, `sudo shutdown now`)
+  })
+  shutdown(() => {
+    console.log(`All those moments will be lost in time, like tears in rain... Time to die.`)
+    exec(`sudo shutdown now`)
+  })
+})
+
 app.use(express.static('static'))
 
 function init(port, callback) {
@@ -143,7 +161,7 @@ function init(port, callback) {
   })
 }
 
-function shutdown() {
+function shutdown(callback) {
   console.log(`*${new Date()} ${SERVICE} in shutdown`)
   let service = app.get('service')
 
@@ -156,7 +174,11 @@ function shutdown() {
         if (err) throw err
         console.log(`*{new Date()} ${SERVICE} deregistered from Registry on ${settings.registry}`)
         console.log(`*{new Date()} ${SERVICE} shutdown`)
-        process.exit();
+        if (callback) {
+          callback()
+        } else {
+          process.exit()
+        }
       })
     })
   })
