@@ -1,5 +1,11 @@
 const express = require('express')
 const fs = require('fs')
+const path = require('path')
+const Eta = require('eta')
+Eta.configure({
+  views: path.join(__dirname, "templates")
+})
+
 const { inherits } = require('util')
 const { Roles, Config } = require('../shared/main')
 const stores = {
@@ -21,6 +27,11 @@ function getLeaseDurationInMillis(role) {
 app.get('/selfcheck', (req, res) => {
   res.setHeader('Content-Type', 'text/plain')
   res.send('OK')
+})
+
+app.get('/register.py', (req, res) => {
+  res.setHeader('Content-Type', 'text/plain')
+  Eta.render('register.py', { registry: `${settings.host}:${settings.port}`})
 })
 
 app.get('/register', (req, res) => {

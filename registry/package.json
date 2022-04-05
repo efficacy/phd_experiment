@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "async": "^3.2.3",
+    "eta": "^1.12.3",
     "express": "^4.17.1",
     "yargs": "^17.3.1"
   },
