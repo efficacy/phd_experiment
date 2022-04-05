@@ -139,7 +139,7 @@ app.get('/shutdown', (req, res) => {
 })
 
 function command(endpoint, script) {
-  let hostname,port = endpoint.split(':')
+  let host,port = endpoint.split(':')
   console.log(`sending ${script} to ${host}`)
 }
 
