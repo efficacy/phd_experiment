@@ -14,7 +14,7 @@ const stores = {
 }
 
 const dfl_port = 9997
-const dfl_lease_duration = 10000
+const dfl_lease_duration = 3600000 // 1 hour
 
 const app = express()
 
