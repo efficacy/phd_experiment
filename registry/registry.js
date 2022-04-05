@@ -30,8 +30,15 @@ app.get('/selfcheck', (req, res) => {
 })
 
 app.get('/register.py', (req, res) => {
+  let settings = app.get('settings')
   res.setHeader('Content-Type', 'text/plain')
-  Eta.render('register.py', { registry: `${settings.host}:${settings.port}`})
+  Eta.renderFile('register.py', {
+      registry: `${settings.host}:${settings.port}`,
+      role: req.query.role || ''
+    }, (err, ret) => {
+      console.log(`returning ${ret}`)
+      res.send(ret)
+    })
 })
 
 app.get('/register', (req, res) => {

@@ -5,7 +5,9 @@ from datetime import datetime, timezone
 import time
 
 registry = "<%=it.registry%>"
-role = os.getenv('ROLE')
+role = "<%=it.role%>"
+if role == "":
+  role = os.getenv('ROLE')
 
 def get_ip():
   host, port = registry.split(':')
