@@ -141,18 +141,20 @@ app.get('/shutdown', (req, res) => {
   shutdown()
 })
 
-function command(endpoint, script) {
+function command(endpoint, script, callback) {
   let home = process.env.HOME
-  let host,port = endpoint.split(':')
+  let [scheme,host,port] = endpoint.split(':')
+  if (host.startsWith('//')) host = host.substring(2)
   ssh.connect({
     host: host,
     username: 'pi',
-    privateKey: '${home}/.ssh/id_rsa'
+    privateKey: `${home}/.ssh/id_rsa`
   }).then(() => {
     console.log(`sending ${script} to ${host}`)
-    ssh.execCommand(`echo ${script}`).then(function(result) {
+    ssh.execCommand(`${script}`).then(function(result) {
       console.log('STDOUT: ' + result.stdout)
       console.log('STDERR: ' + result.stderr)
+      if (callback) callback()
     })
   })
 }
@@ -161,14 +163,18 @@ app.get('/powerdown', (req, res) => {
   let settings = app.get('settings')
 
   app.get('client').lookup(Roles.LOAD, settings, (endpoint) => {
-    command(endpoint, `sudo shutdown now`)
+    command(endpoint, `sudo shutdown now`, () =>{
+      console.log('LOAD shutdown')
+    })
   })
   app.get('client').lookup(Roles.DUT, settings, (endpoint) => {
-    command(endpoint, `sudo shutdown now`)
+    command(endpoint, `sudo shutdown now`, () =>{
+      console.log('DUT shutdown')
+    })
   })
   shutdown(() => {
     console.log(`All those moments will be lost in time, like tears in rain... Time to die.`)
-    exec(`echo sudo shutdown now`)
+    exec(`sudo shutdown now`)
   })
 })
 
