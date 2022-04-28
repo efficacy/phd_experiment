@@ -23,7 +23,11 @@ let requester = new Requester()
 function measure() {
   const measurer = spawn('python', ['./main.py']);
   measurer.stdout.on('data', (data) => {
-      console.log(`P ${data.toString()}`);
+    let lines = data.toString().split('\n')
+    for (i in lines) {
+      let line = lines[i].trim()
+      if (line) console.log(`P ${line}`);
+    }
   });
   measurer.stdout.on('end', () => {
     console.log(`child process ended`)
@@ -34,7 +38,7 @@ function measure() {
   return measurer
 }
 
-function run(scenario, session, callback) {
+function run(scenario, session, url, callback) {
   status.dut_ready = false
   status.load_ready = false
   requester.call(app.get('logger'), 'start', `scenario=${scenario}&session=${session}`, (err) =>{
@@ -48,6 +52,9 @@ function run(scenario, session, callback) {
     let process = measure()
     status.child = true
     app.set('measurer', process)
+
+    //TODO kick off LOAD process, passing the URL
+
     if (callback) callback(session)
   })
 }
@@ -70,11 +77,13 @@ function kill_measurer(app, callback) {
 app.get('/start', (req, res) => {
   let scenario = req.query.scenario
   let session = req.query.session
-  console.log(`start scenario ${scenario} session ${session}`)
+  let url = req.query.url
+  console.log(`start scenario ${scenario} session ${session} dut url ${url}`)
   status.dut_ready = false
   status.load_ready = false
   app.set('scenario', scenario)
   app.set('session', session)
+  app.set('url', url)
   // TODO ssh to set up DUT for scenario, will callback on /dut_ready when done
   // TODO ssh to set up LOAD for scenario, will callback on /load_ready when done
   res.setHeader('Content-Type', 'text/plain')
@@ -87,7 +96,7 @@ app.get('/dut_ready', (req, res) => {
   if (status.load_ready) {
     let scenario = app.get('scenario')
     let session = app.get('session')
-      run(scenario, session, () => {
+      run(scenario, session, url, () => {
       res.setHeader('Content-Type', 'text/plain')
       res.send(`OK Run ${scenario}/${session}`)
     })
@@ -103,9 +112,10 @@ app.get('/load_ready', (req, res) => {
   if (status.dut_ready) {
     let scenario = app.get('scenario')
     let session = app.get('session')
+    let url = app.get('url')
     run(scenario, session, () => {
       res.setHeader('Content-Type', 'text/plain')
-      res.send(`OK Run ${scenario}/${session}`)
+      res.send(`OK Run ${scenario}/${session} against ${url}`)
     })
   } else {
     res.setHeader('Content-Type', 'text/plain')

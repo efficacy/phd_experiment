@@ -61,8 +61,12 @@
 			event.preventDefault();
 			let scenario = start.elements['scenario'].value.trim()
 			let session = start.elements['session'].value.trim()
+			let duturl = start.elements['url'].value.trim()
 			if (session) {
-				httpGet(`/start?scenario=${scenario}&session=${session}`, function(text) {
+        params = new URLSearchParams({scenario: scenario, session: session, url: duturl})
+        let url = new URL('/start', window.location.href)
+        url.search = params
+				httpGet(url.toString(), function(text) {
 					document.getElementById("start-output").innerHTML = text
 					getStatus();
 					setTimeout(() => {
@@ -91,6 +95,8 @@
 		<input type='text' id='scenario' name='scenario'/>
 		<label for='session'>Session:</label>
 		<input type='text' id='session' name='session'/>
+		<label for='url'>DUT URL:</label>
+		<input type='text' id='url' name='url'/>
 		<button type="submit">Submit</button> <span id=start-output></span>
 	</form>
 
