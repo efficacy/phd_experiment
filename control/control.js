@@ -69,7 +69,7 @@ app.get('/run', (req, res) => {
       })
     },
     (next) => {
-      let script = `./ready.sh ${me}/dut_ready`
+      let script = `./ready.sh ${me}dut_ready`
       console.log(` step 2: run dut ready script: ${script}`)
       requester.ssh(dut, script, (err) => {
         console.log(`dut script sent, err=${err}`)
@@ -77,7 +77,7 @@ app.get('/run', (req, res) => {
       })
     },
     (next) => {
-      let script = `./ready.sh ${me}/dut_ready`
+      let script = `./ready.sh ${me}load_ready`
       console.log(` step 3: run load ready script: ${script}`)
       requester.ssh(load, script, (err) => {
         console.log(`dut script sent, err=${err}`)
@@ -149,7 +149,7 @@ function bothReady(callback) {
       })
     },
     (next) => {
-      requester.ssh(load, `./run.sh ${me}/run_complete`, (err) => {
+      requester.ssh(load, `./run.sh ${me}run_complete`, (err) => {
         return next(err)
       })
     },
