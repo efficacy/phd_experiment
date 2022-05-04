@@ -79,7 +79,7 @@ const Store = class {
     this.state.scenario = scenario
     this.state.session = session
     this.state.active = 'Y'
-    this.pool.query('INSERT INTO session2 (scenario,session,status,description) values ($1,$2,"Y",$3)', [scenario, session, description], handle(callback))
+    this.pool.query(`INSERT INTO session2 (scenario,session,status,description) values ($1,$2,'Y',$3)`, [scenario, session, description], handle(callback))
   }
   bstart(callback) {
     // console.log(`pg bstart`)
@@ -110,7 +110,7 @@ const Store = class {
     let scenario = this.state.scenario
     let session = this.state.session
     this.state.active = 'N'
-    this.pool.query('UPDATE session2 SET status="N" where scenario=$1 and session=$2', [scenario, session], handle(callback))
+    this.pool.query(`UPDATE session2 SET status='N' where scenario=$1 and session=$2`, [scenario, session], handle(callback))
     //TODO calculate derived values
   }
   status(callback) {
