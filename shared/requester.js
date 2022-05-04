@@ -1,5 +1,7 @@
 const net = require('net');
+const { NodeSSH } = require('node-ssh')
 
+const nodeSSH = new NodeSSH()
 const Endpoint = require('./endpoint')
 
 const Requester = class {
@@ -30,6 +32,24 @@ const Requester = class {
             callback(err)
         })
     }
+    ssh(endpoint, script, callback) {
+      let home = process.env.HOME
+      let [scheme, host, port] = endpoint.split(':')
+      if (host.startsWith('//')) host = host.substring(2)
+      nodeSSH.connect({
+        host: host,
+        username: 'pi',
+        privateKey: `${home}/.ssh/id_rsa`
+      }).then(() => {
+        console.log(`sending ${script} to ${host}`)
+        nodeSSH.execCommand(`${script}`).then(function (result) {
+          console.log('STDOUT: ' + result.stdout)
+          console.log('STDERR: ' + result.stderr)
+          if (callback) callback()
+        })
+      })
+    }
+
 }
 
 module.exports = Requester

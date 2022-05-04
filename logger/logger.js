@@ -13,13 +13,18 @@ let VERBOSE = process.env.VERBOSE || false
 
 app.get('/status', (req, res) => {
   let store = app.get('store')
-  store.status((err, session, count) => {
+  store.status((err, scenario, session, status, count) => {
     res.setHeader('Content-Type', 'text/plain')
     if (err) {
       res.send(JSON.stringify({ 'error': err }))
     } else {
-      let status = JSON.stringify({ 'session': session, 'count': count })
-      res.send(status)
+      let ret = JSON.stringify({
+        'scenario': scenario,
+        'session': session,
+        "status": status,
+        'count': count
+      })
+      res.send(ret)
     }
   })
 })
@@ -42,21 +47,58 @@ app.get('/rebuild', (req, res) => {
   })
 })
 
-app.get('/start', (req, res) => {
+app.get('/setup', (req, res) => {
   let store = app.get('store')
   let scenario = req.query.scenario
   let session = req.query.session
-  if (VERBOSE) console.log(`endpoint /start scenario=${scenario} session=${session}`)
-  store.start(scenario, session, (err) => {
+  let description = req.query.description
+  if (VERBOSE) console.log(`endpoint /setup scenario=${scenario} session=${session} desc=${description}`)
+  store.setup(scenario, session, (err) => {
     res.setHeader('Content-Type', 'text/plain')
     res.send(err || 'OK')
   })
 })
 
-app.get('/stop', (req, res) => {
+app.get('/bstart', (req, res) => {
   let store = app.get('store')
-  if (VERBOSE) console.log(`endpoint /stop`)
-  store.stop((err) => {
+  if (VERBOSE) console.log(`endpoint /bstart`)
+  store.bstart((err) => {
+    res.setHeader('Content-Type', 'text/plain')
+    res.send(err || 'OK')
+  })
+})
+
+app.get('/bstop', (req, res) => {
+  let store = app.get('store')
+  if (VERBOSE) console.log(`endpoint /bstop`)
+  store.bstop((err) => {
+    res.setHeader('Content-Type', 'text/plain')
+    res.send(err || 'OK')
+  })
+})
+
+app.get('/mstart', (req, res) => {
+  let store = app.get('store')
+  if (VERBOSE) console.log(`endpoint /mstart`)
+  store.mstart((err) => {
+    res.setHeader('Content-Type', 'text/plain')
+    res.send(err || 'OK')
+  })
+})
+
+app.get('/mstop', (req, res) => {
+  let store = app.get('store')
+  if (VERBOSE) console.log(`endpoint /mstop`)
+  store.mstop((err) => {
+    res.setHeader('Content-Type', 'text/plain')
+    res.send(err || 'OK')
+  })
+})
+
+app.get('/terminate', (req, res) => {
+  let store = app.get('store')
+  if (VERBOSE) console.log(`endpoint /terminate`)
+  store.terminate((err) => {
     res.setHeader('Content-Type', 'text/plain')
     res.send(err || 'OK')
   })

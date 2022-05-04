@@ -1,22 +1,14 @@
+const async = require('async')
 const express = require('express')
 const { Roles, Client, Config, Requester } = require('../shared/main')
 const { spawn, exec } = require('child_process');
-const {NodeSSH} = require('node-ssh')
-
-const ssh = new NodeSSH()
 
 const SERVICE = "Control"
+const BASELINE_PERIOD = 1000 // one second
 
 const app = express()
 const dfl_port = 9999
 let VERBOSE = process.env.VERBOSE || false
-
-let status = { running: false, child: false, dut_ready: false, load_ready: false, scenario: null, session: null }
-app.get('/status', (req, res) => {
-  let s = JSON.stringify(status)
-  if (VERBOSE) console.log(`requested status, returned ${s}`)
-  res.send(s)
-})
 
 let requester = new Requester()
 
@@ -38,26 +30,59 @@ function measure() {
   return measurer
 }
 
-function run(scenario, session, url, callback) {
+let status = { running: false, child: false, dut_ready: false, load_ready: false, scenario: null, session: null }
+app.get('/status', (req, res) => {
+  let s = JSON.stringify(status)
+  if (VERBOSE) console.log(`requested status, returned ${s}`)
+  res.send(s)
+})
+
+app.get('/run', (req, res) => {
+  let scenario = req.query.scenario
+  let session = req.query.session
+  let description = req.query.description
+  console.log(`endpoint /run ${scenario} session ${session} desc ${description}`)
+
+  app.set('scenario', scenario)
+  app.set('session', session)
   status.dut_ready = false
   status.load_ready = false
-  requester.call(app.get('logger'), 'start', `scenario=${scenario}&session=${session}`, (err) =>{
-    console.log(`run err=${err}`)
-    if (err) callback(err)
-    status.running = true
-    status.scenario = scenario
-    status.session = session
 
-    console.log(`starting measurement process `)
-    let process = measure()
-    status.child = true
-    app.set('measurer', process)
+  let me = app.get('me')
+  let logger = app.get('logger')
+  let dut = app.get('dut')
+  let load = app.get('load')
 
-    //TODO kick off LOAD process, passing the URL
+  async.series([
+    // Step 1. Baseline measurement - call bstart on logger, wait a while, then call bstop
+    (next) => {
+      requester.call(logger, 'setup', `scenario=${scenario}&session=${session}&description=${description}`, (err) => {
+        console.log(`logger initialised err=${err}`)
+        if (!err) {
+          status.running = true
+          status.scenario = scenario
+          status.session = session
+        }
+        return next(err)
+      })
+    },
+    (next) => {
+      requester.ssh(dut, `./ready.sh ${me}/dut_ready`, (err) => {
+        return next(err)
+      })
+    },
+    (next) => {
+      requester.ssh(load, `./ready.sh ${me}/load_ready`, (err) => {
+        return next(err)
+      })
+    },
 
-    if (callback) callback(session)
+  ], (err, result) => {
+    res.setHeader('Content-Type', 'text/plain')
+    let ret = err || `OK ${scenario}/${session}`
+    res.send(ret)
   })
-}
+})
 
 function kill_measurer(app, callback) {
   let process = app.get('measurer')
@@ -74,31 +99,66 @@ function kill_measurer(app, callback) {
   }
 }
 
-app.get('/start', (req, res) => {
-  let scenario = req.query.scenario
-  let session = req.query.session
-  let url = req.query.url
-  console.log(`start scenario ${scenario} session ${session} dut url ${url}`)
+function bothReady(callback) {
   status.dut_ready = false
   status.load_ready = false
-  app.set('scenario', scenario)
-  app.set('session', session)
-  app.set('url', url)
-  // TODO ssh to set up DUT for scenario, will callback on /dut_ready when done
-  // TODO ssh to set up LOAD for scenario, will callback on /load_ready when done
-  res.setHeader('Content-Type', 'text/plain')
-  res.send(`OK ${scenario}/${session}`)
-})
+
+  let scenario = app.get('scenario')
+  let session = app.get('session')
+  let me = app.get('me')
+  let logger = app.get('logger')
+  let load = app.get('load')
+
+  console.log(`starting measurement process `)
+  let process = measure()
+  status.child = true
+  app.set('measurer', process)
+
+  async.series([
+    // Step 1. Baseline measurement - call bstart on logger, wait a while, then call bstop
+    (next) => {
+      requester.call(logger, 'bstart', '', (err) => {
+        return next(err)
+      })
+    },
+    (next) => {
+      setTimeout(() => {
+        return next()
+      }, BASELINE_PERIOD)
+    },
+    (next) => {
+      requester.call(logger, 'bstop', '', (err) => {
+        return next(err)
+      })
+    },
+
+    // Step 2. Start main measurement - call mstart on logger, then ssh to start LOAD
+    // callback on /load_complete when done
+    (next) => {
+      requester.call(logger, 'mstart', '', (err) => {
+        return next(err)
+      })
+    },
+    (next) => {
+      requester.ssh(load, `./run.sh ${me}/run_complete`, (err) => {
+        return next(err)
+      })
+    },
+  ], (err, result) => {
+    console.log(`test sequence ${scenario}/${session} initiated with err ${err}`)
+  })
+
+  if (callback) callback(null)
+}
 
 app.get('/dut_ready', (req, res) => {
+  console.log(`endpoint /dut_ready`)
   status.dut_ready = true
   console.log(`DUT ready`)
   if (status.load_ready) {
-    let scenario = app.get('scenario')
-    let session = app.get('session')
-      run(scenario, session, url, () => {
+    bothReady((err) => {
       res.setHeader('Content-Type', 'text/plain')
-      res.send(`OK Run ${scenario}/${session}`)
+      res.send(`OK RUN STARTED`)
     })
   } else {
     res.setHeader('Content-Type', 'text/plain')
@@ -107,15 +167,13 @@ app.get('/dut_ready', (req, res) => {
 })
 
 app.get('/load_ready', (req, res) => {
+  console.log(`endpoint /load_ready`)
   status.load_ready = true
   console.log(`LOAD ready`)
   if (status.dut_ready) {
-    let scenario = app.get('scenario')
-    let session = app.get('session')
-    let url = app.get('url')
-    run(scenario, session, () => {
+    bothReady((err) => {
       res.setHeader('Content-Type', 'text/plain')
-      res.send(`OK Run ${scenario}/${session} against ${url}`)
+      res.send(`OK RUN STARTED`)
     })
   } else {
     res.setHeader('Content-Type', 'text/plain')
@@ -123,24 +181,20 @@ app.get('/load_ready', (req, res) => {
   }
 })
 
-app.get('/run', (req, res) => {
-  let scenario = req.query.scenario
-  let session = req.query.session
-  run(scenario, session, (session) => {
-    res.setHeader('Content-Type', 'text/plain')
-    res.send(err || `OK ${session}`)
-  })
-})
-
 app.get('/run_complete', (req, res) => {
-  kill_measurer(app, () => {
-    console.log(`session complete`)
-    status.running = false
-    status.scenario = null
-    status.session = null
-    requester.call(app.get('logger'), 'stop', '', (err) => {
-      res.setHeader('Content-Type', 'text/plain')
-      res.send('OK')
+  console.log(`endpoint /run_complete`)
+  status.running = false
+  status.scenario = null
+  status.session = null
+  requester.call(app.get('logger'), 'mstop', '', (err) => {
+    console.log(`logging stopped`)
+    kill_measurer(app, () => {
+      console.log(`measurement process stopped`)
+      requester.call(app.get('logger'), 'terminate', '', (err) => {
+        console.log(`session terminated`)
+        res.setHeader('Content-Type', 'text/plain')
+        res.send('OK')
+      })
     })
   })
 })
@@ -151,34 +205,16 @@ app.get('/shutdown', (req, res) => {
   shutdown()
 })
 
-function command(endpoint, script, callback) {
-  let home = process.env.HOME
-  let [scheme,host,port] = endpoint.split(':')
-  if (host.startsWith('//')) host = host.substring(2)
-  ssh.connect({
-    host: host,
-    username: 'pi',
-    privateKey: `${home}/.ssh/id_rsa`
-  }).then(() => {
-    console.log(`sending ${script} to ${host}`)
-    ssh.execCommand(`${script}`).then(function(result) {
-      console.log('STDOUT: ' + result.stdout)
-      console.log('STDERR: ' + result.stderr)
-      if (callback) callback()
-    })
-  })
-}
-
 app.get('/powerdown', (req, res) => {
   let settings = app.get('settings')
 
   app.get('client').lookup(Roles.LOAD, settings, (endpoint) => {
-    command(endpoint, `sudo shutdown now`, () =>{
+    command(endpoint, `sudo shutdown now`, () => {
       console.log('LOAD shutdown')
     })
   })
   app.get('client').lookup(Roles.DUT, settings, (endpoint) => {
-    command(endpoint, `sudo shutdown now`, () =>{
+    command(endpoint, `sudo shutdown now`, () => {
       console.log('DUT shutdown')
     })
   })
@@ -210,8 +246,9 @@ function shutdown(callback) {
 
       client.deregister((err) => {
         if (err) throw err
-        console.log(`*{new Date()} ${SERVICE} deregistered from Registry on ${settings.registry}`)
-        console.log(`*{new Date()} ${SERVICE} shutdown`)
+        let now = new Date()
+        console.log(`*${now} ${SERVICE} deregistered from Registry on ${settings.registry}`)
+        console.log(`*${now} ${SERVICE} shutdown`)
         if (callback) {
           callback()
         } else {
@@ -234,14 +271,26 @@ if (require.main === module) {
   init(dfl_port, (err, app, settings) => {
     if (err) throw err
     let service = app.listen(settings.port, () => {
-      console.log(`*${new Date()} ${SERVICE} listening on ${Config.toURL(settings)}`)
-      app.get('client').register(true, (err, expiry, config) => {
+      let client = app.get('client')
+      let me = Config.toURL(settings)
+      app.set("me", me)
+
+      console.log(`*${new Date()} ${SERVICE} listening on ${me}`)
+      client.register(true, (err, expiry, config) => {
         if (err) throw err
         console.log(`*${new Date()} ${SERVICE} registered with Registry on ${settings.registry} renew in ${expiry - Date.now()}ms`)
       })
-      app.get('client').lookup(Roles.LOG, settings, (endpoint) => {
-        console.log(`*${new Date()} ${SERVICE} looked up logger: ${endpoint}`)
+      client.lookup(Roles.LOG, settings, (endpoint) => {
+        console.log(`*${new Date()} ${SERVICE} looked up LOG: ${endpoint}`)
         app.set('logger', endpoint)
+      })
+      client.lookup(Roles.LOAD, settings, (endpoint) => {
+        console.log(`*${new Date()} ${SERVICE} looked up LOAD: ${endpoint}`)
+        app.set('load', endpoint)
+      })
+      client.lookup(Roles.DUT, settings, (endpoint) => {
+        console.log(`*${new Date()} ${SERVICE} looked up DUT: ${endpoint}`)
+        app.set('dut', endpoint)
       })
     })
     app.set('service', service)

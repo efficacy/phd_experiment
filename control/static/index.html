@@ -56,26 +56,27 @@
 		catchClick('run_complete')
 		catchClick('shutdown')
 
-		var start = document.getElementById('start');
-		catchSubmit(start, function(event) {
+		var run = document.getElementById('run');
+		catchSubmit(run, function(event) {
+      console.log('run submit')
 			event.preventDefault();
-			let scenario = start.elements['scenario'].value.trim()
-			let session = start.elements['session'].value.trim()
-			let duturl = start.elements['url'].value.trim()
+			let scenario = run.elements['scenario'].value.trim()
+			let session = run.elements['session'].value.trim()
+			let description = run.elements['description'].value.trim()
 			if (session) {
-        params = new URLSearchParams({scenario: scenario, session: session, url: duturl})
-        let url = new URL('/start', window.location.href)
+        params = new URLSearchParams({scenario: scenario, session: session, description: description})
+        let url = new URL('/run', window.location.href)
         url.search = params
 				httpGet(url.toString(), function(text) {
-					document.getElementById("start-output").innerHTML = text
+					document.getElementById("run-output").innerHTML = text
 					getStatus();
 					setTimeout(() => {
-						document.getElementById('start-output').innerHTML = ''
-						start.elements['session'].value = ''
+						document.getElementById('run-output').innerHTML = ''
+						run.elements['session'].value = ''
 					}, 1000)
 				})
 			} else {
-				document.getElementById("start-output").innerHTML = "Please supply valid session name"
+				document.getElementById("run-output").innerHTML = "Please supply valid session name"
 			}
 			return false
 		})
@@ -90,14 +91,14 @@
 	<h1>Experimemt Lifecycle</h1>
 
 	<b>Select Scenario</b>
-	<form id='start'>
+	<form id='run'>
 		<label for='scenario'>Scenario:</label>
 		<input type='text' id='scenario' name='scenario'/>
 		<label for='session'>Session:</label>
 		<input type='text' id='session' name='session'/>
-		<label for='url'>DUT URL:</label>
-		<input type='text' id='url' name='url'/>
-		<button type="submit">Submit</button> <span id=start-output></span>
+		<label for='description'>Description:</label>
+		<input type='text' id='description' name='description'/>
+		<button type="submit">Submit</button> <span id=run-output></span>
 	</form>
 
 	<b>Wait for Acknowledgement from devices</b>

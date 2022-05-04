@@ -49,9 +49,11 @@
 		var setup = document.getElementById('start');
 		catchSubmit(start, function(event) {
 			event.preventDefault();
+			var scenario = start.elements['scenario'].value.trim()
 			var session = start.elements['session'].value.trim()
+			var description = start.elements['description'].value.trim()
 			if (session) {
-				httpGet('/setup?s='+session, function(text) {
+				httpGet('/setup?scenario='+scenario+'&session='+session+'&description='+description, function(text) {
 					document.getElementById("start-output").innerHTML = text
 					getStatus();
 					setTimeout(() => {
@@ -88,7 +90,11 @@
 			return false
 		})
 
-		catchClick('stop')
+		catchClick('bstart')
+		catchClick('bstop')
+		catchClick('mstart')
+		catchClick('mstop')
+		catchClick('terminate')
 
 		catchClick('truncate')
 		catchClick('rebuild')
@@ -105,14 +111,35 @@
 	</table>
 	</div>
 
-	<h1>Experimemt Lifecycle</h1>
+	<h1>Experiment Lifecycle</h1>
 
-	<b>Start Session</b>
+	<b>Setup Session</b>
 	<form id='start'>
+		<label for='scenario'>Scenario:</label>
+		<input type='text' id='scenario' name='scenario'/>
 		<label for='session'>Session:</label>
 		<input type='text' id='session' name='session'/>
+		<label for='description'>Description:</label>
+		<input type='text' id='description' name='description'/>
 		<button type="submit">Submit</button> <span id=start-output></span>
 	</form>
+
+	<b>Baseline Calibration</b>
+	<ul>
+		<li><a href='#' id='bstart'>Start Baseline Test</a> <span id='bstart-output'></span></li>
+		<li><a href='#' id='bstop'>Stop Baseline Test</a> <span id='bstop-output'></span></li>
+	</ul>
+
+	<b>Measurement</b>
+	<ul>
+		<li><a href='#' id='mstart'>Start Measurement</a> <span id='mstart-output'></span></li>
+		<li><a href='#' id='mstop'>Stop Measurement</a> <span id='mstop-output'></span></li>
+	</ul>
+
+  <b>Terminate Session</b>
+	<ul>
+		<li><a href='#' id='terminate'>Start Measurement</a> <span id='terminate-output'></span></li>
+	</ul>
 
 	<b>Log</b>
 	<form id='log'>
@@ -124,11 +151,6 @@
 		<input type='text' id='current' name='current'/>
 		<button type="submit">Submit</button> <span id=log-output></span>
 	</form>
-
-	<b>Stop Session</b>
-	<ul>
-		<li><a href='#' id='stop'>Stop Current Session</a> <span id='stop-output'></span></li>
-	</ul>
 
 	<h1>General Operations</h1>
 	<ul>
