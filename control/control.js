@@ -53,9 +53,11 @@ app.get('/run', (req, res) => {
   let dut = app.get('dut')
   let load = app.get('load')
 
+  console.log(`starting async sequence...`)
   async.series([
     // Step 1. Baseline measurement - call bstart on logger, wait a while, then call bstop
     (next) => {
+      console.log(` step 1: logger setup`)
       requester.call(logger, 'setup', `scenario=${scenario}&session=${session}&description=${description}`, (err) => {
         console.log(`logger initialised err=${err}`)
         if (!err) {
@@ -67,17 +69,24 @@ app.get('/run', (req, res) => {
       })
     },
     (next) => {
-      requester.ssh(dut, `./ready.sh ${me}/dut_ready`, (err) => {
+      let script = `./ready.sh ${me}/dut_ready`
+      console.log(` step 2: run dut ready script: ${script}`)
+      requester.ssh(dut, script, (err) => {
+        console.log(`dut script sent, err=${err}`)
         return next(err)
       })
     },
     (next) => {
-      requester.ssh(load, `./ready.sh ${me}/load_ready`, (err) => {
+      let script = `./ready.sh ${me}/dut_ready`
+      console.log(` step 3: run load ready script: ${script}`)
+      requester.ssh(load, script, (err) => {
+        console.log(`dut script sent, err=${err}`)
         return next(err)
       })
     },
 
   ], (err, result) => {
+    console.log(`async sequence complete, err=${err}`)
     res.setHeader('Content-Type', 'text/plain')
     let ret = err || `OK ${scenario}/${session}`
     res.send(ret)
