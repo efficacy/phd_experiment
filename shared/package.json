@@ -17,6 +17,7 @@
   },
   "homepage": "https://bitbucket.org/efficacystudy/shared#readme",
   "dependencies": {
+    "node-ssh": "^12.0.4",
     "yargs": "^17.3.1"
   }
 }
