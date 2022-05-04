@@ -4,8 +4,10 @@ import socket
 from datetime import datetime, timezone
 import time
 
-registry = os.getenv('REGISTRY')
-role = os.getenv('ROLE')
+with open("/home/pi/REGISTRY.txt", "r") as text_file:
+  registry = text_file.read().strip()
+with open("/home/pi/ROLE.txt", "r") as text_file:
+  role = text_file.read().strip()
 
 def get_ip():
   host, port = registry.split(':')
