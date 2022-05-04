@@ -4,7 +4,7 @@ const { Roles, Client, Config, Requester } = require('../shared/main')
 const { spawn, exec } = require('child_process');
 
 const SERVICE = "Control"
-const BASELINE_PERIOD = 1000 // one second
+const BASELINE_PERIOD = 30000 // thirty seconds
 
 const app = express()
 const dfl_port = 9999
