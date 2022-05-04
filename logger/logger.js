@@ -53,7 +53,7 @@ app.get('/setup', (req, res) => {
   let session = req.query.session
   let description = req.query.description
   if (VERBOSE) console.log(`endpoint /setup scenario=${scenario} session=${session} desc=${description}`)
-  store.setup(scenario, session, (err) => {
+  store.setup(scenario, session, description, (err) => {
     res.setHeader('Content-Type', 'text/plain')
     res.send(err || 'OK')
   })
