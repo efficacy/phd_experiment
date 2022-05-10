@@ -69,16 +69,16 @@ app.get('/run', (req, res) => {
       })
     },
     (next) => {
-      let script = `./ready.sh ${me}dut_ready`
-      console.log(` step 2: run dut ready script: ${script}`)
+      let script = `./warmup.sh ${me}dut_ready`
+      console.log(` step 2: run dut warmup script: ${script}`)
       requester.ssh(dut, script, (err) => {
         console.log(`dut script sent, err=${err}`)
         return next(err)
       })
     },
     (next) => {
-      let script = `./ready.sh ${me}load_ready`
-      console.log(` step 3: run load ready script: ${script}`)
+      let script = `./warmup.sh ${me}load_ready`
+      console.log(` step 3: run load warmup script: ${script}`)
       requester.ssh(load, script, (err) => {
         console.log(`dut script sent, err=${err}`)
         return next(err)
@@ -195,16 +195,36 @@ app.get('/run_complete', (req, res) => {
   status.running = false
   status.scenario = null
   status.session = null
-  requester.call(app.get('logger'), 'mstop', '', (err) => {
-    console.log(`logging stopped`)
-    kill_measurer(app, () => {
-      console.log(`measurement process stopped`)
-      requester.call(app.get('logger'), 'terminate', '', (err) => {
-        console.log(`session terminated`)
-        res.setHeader('Content-Type', 'text/plain')
-        res.send('OK')
+  async.series([
+    (next) => {
+      requester.call(app.get('logger'), 'mstop', '', (err) => {
+        console.log(`logging stopped`)
+        return next(err)
       })
-    })
+    },
+    (next) => {
+      kill_measurer(app, () => {
+        console.log(`measurement process stopped`)
+        next()
+      })
+    },
+    (next) => {
+      requester.call(app.get('logger'), 'terminate', '', (err) => {
+        return next(err)
+      })
+    },
+    (next) => {
+      let script = `./cooldown.sh ${me}cooldown_complete`
+      console.log(` shut down any active DUT services: ${script}`)
+      requester.ssh(dut, script, (err) => {
+        console.log(`dut script sent, err=${err}`)
+        return next(err)
+      })
+    },
+  ], (err, result) => {
+    console.log(`session ${scenario}/${session} terminated with err ${err}`)
+    res.setHeader('Content-Type', 'text/plain')
+    res.send('OK')
   })
 })
 
