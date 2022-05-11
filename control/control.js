@@ -202,6 +202,8 @@ app.get('/load_ready', (req, res) => {
 })
 
 app.get('/run_complete', (req, res) => {
+  let scenario = app.get('scenario')
+  let session = app.get('session')
   let me = app.get('me')
   let dut = app.get('dut')
   let load = app.get('load')
