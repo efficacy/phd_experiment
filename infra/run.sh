@@ -5,4 +5,4 @@
 sleep 10
 # ping the controller to let it know we have finished
 echo pinging $1
-curl $1
+curl -s $1

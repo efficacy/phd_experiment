@@ -4,4 +4,4 @@
 echo $1
 # just a dummy test for now
 siege http://192.168.0.183/static/index.html -r 100
-curl $1
+curl -s $1

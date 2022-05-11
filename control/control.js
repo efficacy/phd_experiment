@@ -53,7 +53,7 @@ app.get('/run', (req, res) => {
   let dut = app.get('dut')
   let load = app.get('load')
 
-  console.log(`starting async sequence...`)
+  console.log(`starting warmup sequence...`)
   async.series([
     // Step 1. Baseline measurement - call bstart on logger, wait a while, then call bstop
     (next) => {
@@ -86,7 +86,8 @@ app.get('/run', (req, res) => {
     },
 
   ], (err, result) => {
-    console.log(`async sequence complete, err=${err}`)
+    let message = err ? `err=${err}` : `OK`
+    console.log(`async warmup sequence complete ${message}`)
     res.setHeader('Content-Type', 'text/plain')
     let ret = err || `OK ${scenario}/${session}`
     res.send(ret)
@@ -118,43 +119,49 @@ function bothReady(callback) {
   let logger = app.get('logger')
   let load = app.get('load')
 
-  console.log(`starting measurement process `)
   let process = measure()
   status.child = true
   app.set('measurer', process)
 
+  console.log(`starting baseline sequence...`)
+  // Baseline measurement - call bstart on logger, wait a while, then call bstop
   async.series([
-    // Step 1. Baseline measurement - call bstart on logger, wait a while, then call bstop
     (next) => {
+      console.log(` step 1: call bstart on logger`)
       requester.call(logger, 'bstart', '', (err) => {
         return next(err)
       })
     },
     (next) => {
+      console.log(` step 2: wait for baseline period`)
       setTimeout(() => {
         return next()
       }, BASELINE_PERIOD)
     },
     (next) => {
+      console.log(` step 3: call bstop on logger`)
       requester.call(logger, 'bstop', '', (err) => {
         return next(err)
       })
     },
 
-    // Step 2. Start main measurement - call mstart on logger, then ssh to start LOAD
-    // callback on /load_complete when done
+    // Main measurement - call mstart on logger, then ssh to start LOAD
     (next) => {
+      console.log(`starting main sequence...`)
+      console.log(` step 1: call mstart on logger`)
       requester.call(logger, 'mstart', '', (err) => {
         return next(err)
       })
     },
     (next) => {
+      console.log(` step 2: run load script, wait for callback on /run_complete`)
       requester.ssh(load, `./run.sh ${me}run_complete`, (err) => {
         return next(err)
       })
     },
   ], (err, result) => {
-    console.log(`test sequence ${scenario}/${session} initiated with err ${err}`)
+    let message = err ? `with err ${err}` : `OK`
+    console.log(`measurement sequence ${scenario}/${session} initiated ${message}`)
   })
 
   if (callback) callback(null)
@@ -195,37 +202,49 @@ app.get('/run_complete', (req, res) => {
   status.running = false
   status.scenario = null
   status.session = null
+
+  console.log(`stopping measurement...`)
   async.series([
     (next) => {
+      console.log(` step 1: call mstop on logger`)
       requester.call(app.get('logger'), 'mstop', '', (err) => {
         console.log(`logging stopped`)
         return next(err)
       })
     },
     (next) => {
+      console.log(` step 2: stop measurement process`)
       kill_measurer(app, () => {
         console.log(`measurement process stopped`)
-        next()
+        return next()
       })
     },
     (next) => {
+      console.log(` step 3: call terminate on logger`)
       requester.call(app.get('logger'), 'terminate', '', (err) => {
         return next(err)
       })
     },
     (next) => {
       let script = `./cooldown.sh ${me}cooldown_complete`
-      console.log(` shut down any active DUT services: ${script}`)
+      console.log(` step 2: run dut cooldown script: ${script}`)
       requester.ssh(dut, script, (err) => {
         console.log(`dut script sent, err=${err}`)
         return next(err)
       })
     },
   ], (err, result) => {
-    console.log(`session ${scenario}/${session} terminated with err ${err}`)
+    let message = err ? `with err ${err}` : `OK`
+    console.log(`session ${scenario}/${session} terminated ${message}`)
     res.setHeader('Content-Type', 'text/plain')
     res.send('OK')
   })
+})
+
+app.get('/cooldown_complete', (req, res) => {
+  console.log(`endpoint /cooldown_complete`)
+  res.setHeader('Content-Type', 'text/plain')
+  res.send('OK')
 })
 
 app.get('/shutdown', (req, res) => {

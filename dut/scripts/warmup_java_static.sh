@@ -5,4 +5,4 @@ java -jar /home/pi/dut/server.jar &
 sleep 1
 
 # Should be provided with an argument with the URL to call back
-curl $1
+curl -s $1

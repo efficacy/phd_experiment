@@ -4,4 +4,4 @@ echo 'shut down java server'
 kill `pgrep server.jar`
 
 # Should be provided with an argument with the URL to call back
-curl $1
+curl -s $1
