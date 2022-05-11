@@ -203,6 +203,8 @@ app.get('/run_complete', (req, res) => {
   status.scenario = null
   status.session = null
 
+  let me = app.get('me')
+
   console.log(`stopping measurement...`)
   async.series([
     (next) => {
