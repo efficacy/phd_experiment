@@ -59,7 +59,8 @@ app.get('/run', (req, res) => {
     (next) => {
       console.log(` step 1: logger setup`)
       requester.call(logger, 'setup', `scenario=${scenario}&session=${session}&description=${description}`, (err) => {
-        console.log(`logger initialised err=${err}`)
+        let message = err ? `err=${err}` : `OK`
+        console.log(`  logger initialised ${message}`)
         if (!err) {
           status.running = true
           status.scenario = scenario
@@ -72,7 +73,8 @@ app.get('/run', (req, res) => {
       let script = `./warmup.sh ${me}dut_ready`
       console.log(` step 2: run dut warmup script: ${script}`)
       requester.ssh(dut, script, (err) => {
-        console.log(`dut script sent, err=${err}`)
+        let message = err ? `err=${err}` : `OK`
+        console.log(`  dut warmup script sent, ${message}`)
         return next(err)
       })
     },
@@ -80,7 +82,8 @@ app.get('/run', (req, res) => {
       let script = `./warmup.sh ${me}load_ready`
       console.log(` step 3: run load warmup script: ${script}`)
       requester.ssh(load, script, (err) => {
-        console.log(`dut script sent, err=${err}`)
+        let message = err ? `err=${err}` : `OK`
+        console.log(`  load warmup script sent, ${message}`)
         return next(err)
       })
     },
@@ -117,6 +120,7 @@ function bothReady(callback) {
   let session = app.get('session')
   let me = app.get('me')
   let logger = app.get('logger')
+  let dut = app.get('dut')
   let load = app.get('load')
 
   let process = measure()
@@ -161,7 +165,7 @@ function bothReady(callback) {
     },
   ], (err, result) => {
     let message = err ? `with err ${err}` : `OK`
-    console.log(`measurement sequence ${scenario}/${session} initiated ${message}`)
+    console.log(`main sequence ${scenario}/${session} initiated ${message}`)
   })
 
   if (callback) callback(null)
@@ -198,26 +202,28 @@ app.get('/load_ready', (req, res) => {
 })
 
 app.get('/run_complete', (req, res) => {
-  console.log(`endpoint /run_complete`)
+  let me = app.get('me')
+  let dut = app.get('dut')
+  let load = app.get('load')
+
+  console.log(`endpoint /run_complete me=${me}`)
   status.running = false
   status.scenario = null
   status.session = null
-
-  let me = app.get('me')
 
   console.log(`stopping measurement...`)
   async.series([
     (next) => {
       console.log(` step 1: call mstop on logger`)
       requester.call(app.get('logger'), 'mstop', '', (err) => {
-        console.log(`logging stopped`)
+        console.log(`  logging stopped`)
         return next(err)
       })
     },
     (next) => {
       console.log(` step 2: stop measurement process`)
       kill_measurer(app, () => {
-        console.log(`measurement process stopped`)
+        console.log(`  measurement process stopped`)
         return next()
       })
     },
@@ -231,7 +237,7 @@ app.get('/run_complete', (req, res) => {
       let script = `./cooldown.sh ${me}cooldown_complete`
       console.log(` step 2: run dut cooldown script: ${script}`)
       requester.ssh(dut, script, (err) => {
-        console.log(`dut script sent, err=${err}`)
+        console.log(`  dut cooldown script sent, err=${err}`)
         return next(err)
       })
     },
