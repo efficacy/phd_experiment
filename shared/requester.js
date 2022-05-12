@@ -3,6 +3,7 @@ const { NodeSSH } = require('node-ssh')
 
 const nodeSSH = new NodeSSH()
 const Endpoint = require('./endpoint')
+const Utils = require('./endpoint')
 
 const Requester = class {
     constructor(roles, defaults) {
@@ -43,16 +44,8 @@ const Requester = class {
       }).then(() => {
         console.log(`  sending ${script} to ${host}`)
         nodeSSH.execCommand(`${script}`).then(function (result) {
-          let lines = result.stdout.toString().split('\n')
-          for (i in lines) {
-            let line = lines[i].trim()
-            if (line) console.log(`  > ${line}`);
-          }
-          lines = result.stderr.toString().split('\n')
-          for (i in lines) {
-            let line = lines[i].trim()
-            if (line) console.log(`  > ${line}`);
-          }
+          Utils.logPrefix(result.stdout, '  >')
+          Utils.logPrefix(result.stderr, '  >')
           if (callback) callback()
         })
       })

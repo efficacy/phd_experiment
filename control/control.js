@@ -1,6 +1,6 @@
 const async = require('async')
 const express = require('express')
-const { Roles, Client, Config, Requester } = require('../shared/main')
+const { Roles, Client, Config, Requester, Utils } = require('../shared/main')
 const { spawn, exec } = require('child_process');
 
 const SERVICE = "Control"
@@ -15,11 +15,7 @@ let requester = new Requester()
 function measure() {
   const measurer = spawn('python', ['./main.py']);
   measurer.stdout.on('data', (data) => {
-    let lines = data.toString().split('\n')
-    for (i in lines) {
-      let line = lines[i].trim()
-      if (line) console.log(`P ${line}`);
-    }
+    Utils.logPrefix(data, 'P')
   });
   measurer.stdout.on('end', () => {
     console.log(`child process ended`)
