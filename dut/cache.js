@@ -14,6 +14,8 @@ function send(url, res, data, callback) {
     type = 'text/css'
   } else if (url.endsWith('.png')) {
     type = 'image/png'
+  } else if (url.endsWith('.js') || url.endsWith('.js.download')) {
+    type = 'text/javascript'
   }
   res.setHeader('Content-Type', type);
   res.send(data)
