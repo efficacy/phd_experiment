@@ -3,7 +3,7 @@ const { NodeSSH } = require('node-ssh')
 
 const nodeSSH = new NodeSSH()
 const Endpoint = require('./endpoint')
-const Utils = require('./endpoint')
+const Utils = require('./utils')
 
 const Requester = class {
     constructor(roles, defaults) {
