@@ -44,8 +44,8 @@ const Requester = class {
       }).then(() => {
         console.log(`  sending ${script} to ${host}`)
         nodeSSH.execCommand(`${script}`).then(function (result) {
-          Utils.logPrefix(result.stdout, '  >')
-          Utils.logPrefix(result.stderr, '  >')
+          Utils.logPrefix(result.stdout, '  > ')
+          Utils.logPrefix(result.stderr, '  > ')
           if (callback) callback()
         })
       })

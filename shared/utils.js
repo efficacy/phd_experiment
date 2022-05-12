@@ -4,7 +4,7 @@ const Utils = class {
     let lines = text.toString().split('\n')
     for (let i in lines) {
       let line = lines[i].trim()
-      if (line) ret += line + '\n'
+      if (line) ret += p + line + '\n'
     }
     return ret
   }

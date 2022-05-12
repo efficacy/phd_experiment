@@ -15,7 +15,7 @@ let requester = new Requester()
 function measure() {
   const measurer = spawn('python', ['./main.py']);
   measurer.stdout.on('data', (data) => {
-    Utils.logPrefix(data, 'P')
+    Utils.logPrefix(data, 'P ')
   });
   measurer.stdout.on('end', () => {
     console.log(`child process ended`)
