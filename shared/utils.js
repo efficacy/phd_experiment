@@ -9,7 +9,7 @@ const Utils = class {
     return ret
   }
   static logPrefix(text, p) {
-    process.stdout.write(prefix(text, p))
+    process.stdout.write(Utils.prefix(text, p))
   }
 }
 
