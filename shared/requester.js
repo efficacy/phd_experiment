@@ -41,10 +41,18 @@ const Requester = class {
         username: 'pi',
         privateKey: `${home}/.ssh/id_rsa`
       }).then(() => {
-        console.log(`sending ${script} to ${host}`)
+        console.log(`  sending ${script} to ${host}`)
         nodeSSH.execCommand(`${script}`).then(function (result) {
-          console.log('STDOUT: ' + result.stdout)
-          console.log('STDERR: ' + result.stderr)
+          let lines = result.stdout.toString().split('\n')
+          for (i in lines) {
+            let line = lines[i].trim()
+            if (line) console.log(`  > ${line}`);
+          }
+          lines = result.stderr.toString().split('\n')
+          for (i in lines) {
+            let line = lines[i].trim()
+            if (line) console.log(`  > ${line}`);
+          }
           if (callback) callback()
         })
       })
