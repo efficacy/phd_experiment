@@ -1,9 +1,13 @@
 const fs = require('fs');
 const express = require('express')
 const app = express()
-const port = 3000
 
-let base = './static'
+let options = {
+  r: '/var/www/html/static',
+  p: 3000,
+  c: false,
+  v: false
+}
 let cache = {}
 
 function send(url, res, data, callback) {
@@ -26,22 +30,52 @@ app.use((req, res, next) => {
   let url = req.originalUrl
   if (url == '/') url = '/index.html'
   if (url in cache) {
+    if (options.v) console.log(`cache hit ${url}`)
     console.log(`serving ${url} from cache`)
     send(url, res, cache[url], next)
   } else {
-    let path = base + url
+    if (options.v) console.log(`read file ${url}`)
+    let path = options.r + url
     console.log(`reading ${path}`)
     fs.readFile(path, (err, data) => {
       if (err) {
         console.error(err);
         return;
       }
-      cache[url] = data
+      if (options.c) cache[url] = data
       send(url, res, data, next)
     });
   }
 });
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
+let args = process.argv.slice(2)
+let i = 0
+while (i <args.length) {
+  let arg = args[i]
+  if (arg.startsWith('-')) {
+    let c = arg.charAt(1)
+    switch (c) {
+      case 'r':
+        options.r = args[++i]
+        break
+      case 'p':
+        options.p = args[++i].parseInt()
+        break
+      case 'c':
+        options.c = true
+        break
+      case 'v':
+        options.v = true
+        break
+      default:
+        throw `Unknown argument ${arg}`
+    }
+  } else {
+    options.r = arg
+  }
+  ++i
+}
+
+app.listen(options.p, () => {
+  console.log(`Example app listening on port ${options.p}`)
 })
