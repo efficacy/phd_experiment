@@ -4,7 +4,7 @@ const app = express()
 
 let options = {
   r: '/var/www/html/static',
-  p: 3000,
+  p: 8000,
   c: false,
   v: false
 }
