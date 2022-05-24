@@ -77,5 +77,5 @@ while (i <args.length) {
 }
 
 app.listen(options.p, () => {
-  console.log(`Example app listening on port ${options.p}`)
+  console.log(`Node server listening on port ${options.p} serving ${options.r} cache=${options.c}`)
 })
