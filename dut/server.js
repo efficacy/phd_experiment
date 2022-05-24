@@ -3,7 +3,7 @@ const express = require('express')
 const app = express()
 
 let options = {
-  r: '/var/www/html/static',
+  r: '/var/www/html',
   p: 8000,
   c: false,
   v: false
@@ -28,10 +28,9 @@ function send(url, res, data, callback) {
 
 app.use((req, res, next) => {
   let url = req.originalUrl
-  if (url == '/') url = '/index.html'
+  if (url.endsWith('/')) url += 'index.html'
   if (url in cache) {
     if (options.v) console.log(`cache hit ${url}`)
-    console.log(`serving ${url} from cache`)
     send(url, res, cache[url], next)
   } else {
     if (options.v) console.log(`read file ${url}`)
@@ -40,7 +39,7 @@ app.use((req, res, next) => {
     fs.readFile(path, (err, data) => {
       if (err) {
         console.error(err);
-        return;
+        return next();
       }
       if (options.c) cache[url] = data
       send(url, res, data, next)
