@@ -82,9 +82,9 @@
         let expiry = `${fdate(new Date(lease.expiry))}`
         ret += `<tr><td>${lease.role}</td><td><a href='${lease.address}'>${lease.address}</a></td><td>${expiry}</td><td>${remaining}</td>\n`
         ret += `<td>
-        <a href='#' onclick='deregister("${lease.role}", "output-${lease.role}")'>deregister</a>
-        <a href='#' onclick='remove("${lease.role}", "output-${lease.role}")'>remove</a>
-        <a href='#' onclick='shutdown("${lease.role}", "output-${lease.role}")'>remove</a>
+        <a href='#' onclick='deregister("${lease.role}", "output-${lease.role}")'>deregister</a> ~
+        <a href='#' onclick='remove("${lease.role}", "output-${lease.role}")'>remove</a> ~
+        <a href='#' onclick='shutdown("${lease.role}", "output-${lease.role}")'>shutdown</a>
         <span id="output-${lease.role}"></span>
         </td></tr>\n`
       }
@@ -125,7 +125,7 @@
 
 	function shutdown(role, output) {
 		event.preventDefault()
-		fetch(`/sgurdown?role=${role}`, {mode: 'cors'}).then((r)=>{r.text().then((s) => {
+		fetch(`/shutdown?role=${role}`, {mode: 'cors'}).then((r)=>{r.text().then((s) => {
 			let dest = document.getElementById(output)
 			dest.innerHTML = s
 			setTimeout(() => {
