@@ -7,7 +7,10 @@ Eta.configure({
 })
 
 const { inherits } = require('util')
-const { Roles, Config } = require('../shared/main')
+const { Roles, Config, Requester } = require('../shared/main')
+
+let requester = new Requester()
+
 const stores = {
   memory: require('./store/memory').create(),
   files: require('./store/files').create()
@@ -24,6 +27,16 @@ function getLeaseDurationInMillis(role) {
   return lease_duration
 }
 
+function shutdown(role, address, callback) {
+  if (role in ['DUT', 'LOAD', 'CTRL']) {
+    requester.ssh(address, "sudo shutdown now", (err) => {
+      console.log(`* sent shutdown messaage to ${role}`)
+    });
+  } else {
+    if (callback) callback()
+  }
+}
+
 app.get('/selfcheck', (req, res) => {
   res.setHeader('Content-Type', 'text/plain')
   res.send('OK')
@@ -33,12 +46,12 @@ app.get('/register.py', (req, res) => {
   let settings = app.get('settings')
   res.setHeader('Content-Type', 'text/plain')
   Eta.renderFile('register.py', {
-      registry: `${settings.host}:${settings.port}`,
-      role: req.query.role || ''
-    }, (err, ret) => {
-      console.log(`returning ${ret}`)
-      res.send(ret)
-    })
+    registry: `${settings.host}:${settings.port}`,
+    role: req.query.role || ''
+  }, (err, ret) => {
+    console.log(`returning ${ret}`)
+    res.send(ret)
+  })
 })
 
 app.get('/register', (req, res) => {
@@ -123,6 +136,29 @@ app.get('/remove', (req, res) => {
       return res.send(err)
     }
     res.send('OK')
+  })
+})
+
+app.get('/shutdown', (req, res) => {
+  let role = req.query.role
+  let store = app.get('store')
+  store.getAddress(role, (err, address) => {
+    if (!err) {
+      console.log(`* shutdown role=${role} address=${address}`)
+      shutdown(role, address, () => {
+        console.log(`* remove role=${role} address=${address}`)
+        store.removeIpAddressLease(role, address, (err) => {
+          res.setHeader('Content-Type', 'text/plain')
+          if (err) {
+            return res.send(err)
+          }
+          res.send('OK')
+        })
+      })
+    } else {
+      res.setHeader('Content-Type', 'text/plain')
+      return res.send(err)
+    }
   })
 })
 

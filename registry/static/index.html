@@ -84,6 +84,7 @@
         ret += `<td>
         <a href='#' onclick='deregister("${lease.role}", "output-${lease.role}")'>deregister</a>
         <a href='#' onclick='remove("${lease.role}", "output-${lease.role}")'>remove</a>
+        <a href='#' onclick='shutdown("${lease.role}", "output-${lease.role}")'>remove</a>
         <span id="output-${lease.role}"></span>
         </td></tr>\n`
       }
@@ -113,6 +114,18 @@
 	function remove(role, output) {
 		event.preventDefault()
 		fetch(`/remove?role=${role}`, {mode: 'cors'}).then((r)=>{r.text().then((s) => {
+			let dest = document.getElementById(output)
+			dest.innerHTML = s
+			setTimeout(() => {
+				dest.innerHTML = ''
+				getStatus();
+			}, 1000)
+		})})
+	}
+
+	function shutdown(role, output) {
+		event.preventDefault()
+		fetch(`/sgurdown?role=${role}`, {mode: 'cors'}).then((r)=>{r.text().then((s) => {
 			let dest = document.getElementById(output)
 			dest.innerHTML = s
 			setTimeout(() => {
