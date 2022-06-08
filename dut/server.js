@@ -29,13 +29,12 @@ function send(url, res, data, callback) {
 app.use((req, res, next) => {
   let url = req.originalUrl
   if (url.endsWith('/')) url += 'index.html'
-  if (url in cache) {
+  if (options.c && url in cache) {
     if (options.v) console.log(`cache hit ${url}`)
     send(url, res, cache[url], next)
   } else {
     if (options.v) console.log(`read file ${url}`)
     let path = options.r + url
-    console.log(`reading ${path}`)
     fs.readFile(path, (err, data) => {
       if (err) {
         console.error(err);
