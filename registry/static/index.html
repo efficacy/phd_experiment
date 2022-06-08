@@ -128,10 +128,10 @@
 		fetch(`/shutdown?role=${role}`, {mode: 'cors'}).then((r)=>{r.text().then((s) => {
 			let dest = document.getElementById(output)
 			dest.innerHTML = s
-			// setTimeout(() => {
-			// 	dest.innerHTML = ''
-			// 	getStatus();
-			// }, 1000)
+			setTimeout(() => {
+				dest.innerHTML = ''
+				getStatus();
+			}, 1000)
 		})})
 	}
 

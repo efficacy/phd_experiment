@@ -142,7 +142,7 @@ app.get('/remove', (req, res) => {
 app.get('/shutdown', (req, res) => {
   let role = req.query.role
   let store = app.get('store')
-  store.getAddress(role, (err, address) => {
+  store.getAddress(role, null, (err, address) => {
     if (!err) {
       console.log(`* shutdown role=${role} address=${address}`)
       shutdown(role, address, () => {
