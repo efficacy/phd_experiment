@@ -29,7 +29,7 @@ function getLeaseDurationInMillis(role) {
 
 function shutdown(role, address, callback) {
   if (role in ['DUT', 'LOAD', 'CTRL']) {
-    requester.ssh(address, "sudo shutdown now", (err) => {
+    requester.ssh(address, "shutdown -h now", (err) => {
       console.log(`* sent shutdown messaage to ${role}`)
     });
   } else {
