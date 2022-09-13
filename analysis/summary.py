@@ -135,11 +135,13 @@ def plot():
   con = pg.connect(database="experiments", user="logger", password="logger", host="192.168.0.187", port="5432")
   print("# Database opened successfully")
 
+  labels = []
   mins = []
   means = []
   maxes = []
 
   for key in runs:
+    labels.append(key)
     sessions = runs[key]
     print('samples for ' + key)
     values = []
@@ -160,15 +162,16 @@ def plot():
   errors = np.array([mins, maxes])
   print("combined errors:", errors)
 
-  plt.style.use('seaborn-whitegrid')
-
   fig,ax = plt.subplots(1)
-  ax.errorbar(np.arange(len(runs)), means, yerr=errors, fmt='.k')
+  ax.set_xticks(range(len(runs)))
+  ax.set_xticklabels(labels, rotation=75, ha='right')
+  ax.errorbar(np.arange(len(runs)), means, yerr=errors, fmt='.k', capsize=4)
   # ax.plot(x, y)
 
   # ax.set_xlabel('time (s)')
-  ax.set_ylabel('Energy (J)')
-  ax.set_title('Energy by Scenario')
+  ax.set_ylabel('Energy (Joules)')
+  ax.set_title('Energy Usage by Scenario')
+  fig.tight_layout()
   plt.show()
 
 plot()
