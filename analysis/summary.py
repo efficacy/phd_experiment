@@ -1,0 +1,174 @@
+import sys
+from itertools import accumulate
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import psycopg2 as pg
+
+def round6(n):
+  return '{:g}'.format(float('{:.6g}'.format(n)))
+
+def normalise_name(scenario, session):
+  return scenario + "_" + session
+
+def crunch(con, name):
+  return 0, 0, 0, 0, 0
+
+def ensure_subtable(con, scenario, session):
+  # make a copy of the active data from this test
+  name = normalise_name(scenario, session)
+  cur = con.cursor()
+  cur.execute("create table if not exists " + name + " as select scenario, session, t, v, i, v*i as p from session2, log where t >= start and t < stop and scenario='" + scenario + "' and session='" + session + "'")
+  con.commit()
+  # print("# Created test table")
+
+def calculate_baseline(con, scenario, session):
+  # determine the average and total baseline power usage
+  cur = con.cursor()
+  cur.execute("select v*i as p from session2, log where t >= base_start and t < base_stop and scenario='" + scenario + "' and session='" + session + "'")
+  rows = cur.fetchall()
+  # print("fetched " + str(len(rows)) + " baseline measurements")
+
+  baseline = []
+
+  for row in rows:
+    p = row[0]
+    baseline.append(p)
+
+  bl_total = np.sum(baseline)
+  bl_mean = np.mean(baseline)
+
+  return bl_total, bl_mean
+
+def calculate_active(con, scenario, session):
+  # process the active data
+  name = normalise_name(scenario, session)
+  cur = con.cursor()
+  cur.execute("select t,p from " + name + " order by t")
+  rows = cur.fetchall()
+
+  x = []
+  y = []
+
+  active = []
+
+  if len(rows) == 0:
+    raise RuntimeError("no data to analyse")
+
+  first = rows[0][0]
+
+  for row in rows:
+    t = row[0]
+    last = t
+    dt = (t - first).total_seconds()
+    p = row[1]
+    x.append(dt)
+    y.append(p)
+    active.append(p)
+
+  act_total = np.sum(active)
+  act_mean = np.mean(active)
+  return act_total, act_mean, len(active), x, y
+
+def calculate(con, scenario, session):
+  ensure_subtable(con, scenario, session)
+  bl_total, bl_mean = calculate_baseline(con, scenario, session)
+  act_total, act_mean, n, x, y = calculate_active(con, scenario, session)
+  run_total = bl_total + act_total
+  extra = act_total - (bl_mean * n)
+  return extra, x, y, bl_mean, act_mean, act_total, run_total
+
+def plot():
+  runs = {
+    'Wordpress / Apache': [
+      ('S0506', '2'),
+      ('S0511', '9'),
+      ('S0505', '3'),
+      ],
+    # 'Wordpress / Nginx': [],
+    'Wordpress / Lighttpd': [
+      ('S0506', '4')
+      ],
+    'Static / Apache': [
+      ('S0505', '4'),
+      ('S0506', '1'),
+      ('S0511', '8'),
+      ('S0512', '3'),
+      ('S0512', '8'),
+      ('S0512', '9'),
+      ],
+    'Static / Nginx': [
+      ('S0512', '10'),
+      ('S0512', '11'),
+    ],
+    'Static / Lighttpd': [
+      ('S0505', '1'),
+      ('S0506', '3'),
+      ],
+    'Static / Java': [
+      ('S0512', '16'),
+      ('S0512', '17'),
+      ('S0512', '21'),
+      ('S0517', '12'),
+    ],
+    'Static / Java (*)': [
+      ('S0512', '22'),
+      ('S0517', '13'),
+      ('S0517', '14'),
+    ],
+    'Static / Node': [
+      ('S0524', '4'),
+      ('S0524', '5'),
+    ],
+    'Static / Node (*)': [
+      ('S0524', '7'),
+      ('S0524', '8'),
+    ],
+    'Static / Jetty': [
+      ('S0517', '1'),
+      ('S0517', '2'),
+      ('S0517', '3'),
+      ('S0517', '4'),
+    ],
+  }
+
+  con = pg.connect(database="experiments", user="logger", password="logger", host="192.168.0.187", port="5432")
+  print("# Database opened successfully")
+
+  mins = []
+  means = []
+  maxes = []
+
+  for key in runs:
+    sessions = runs[key]
+    print('samples for ' + key)
+    values = []
+    for run in sessions:
+      scenario, session = run
+      # print(" considering " + scenario + "/" + session)
+      usage, x, y, bl_mean, act_mean, act_total, run_total = calculate(con, scenario, session)
+      print('  (' + scenario + '/' + session + '): ' + str(round6(usage)) )
+      values.append(usage)
+    min = np.min(values)
+    max = np.max(values)
+    mean = np.mean(values)
+    print(' min: ' + str(min) + ' mean:' + str(mean) + ' max: ' + str(max))
+    mins.append(mean-min)
+    maxes.append(max-min)
+    means.append(mean)
+
+  errors = np.array([mins, maxes])
+  print("combined errors:", errors)
+
+  plt.style.use('seaborn-whitegrid')
+
+  fig,ax = plt.subplots(1)
+  ax.errorbar(np.arange(len(runs)), means, yerr=errors, fmt='.k')
+  # ax.plot(x, y)
+
+  # ax.set_xlabel('time (s)')
+  ax.set_ylabel('Energy (J)')
+  ax.set_title('Energy by Scenario')
+  plt.show()
+
+plot()
