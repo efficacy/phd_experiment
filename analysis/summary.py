@@ -174,33 +174,58 @@ def plot():
       maxes.append(max-min)
       means.append(mean)
 
-  errors = np.array([mins, maxes])
-  # print("combined errors:", errors)
+
+  colors = { 'Wordpress' : 'red', 'Static' : 'green'}
 
   sep = 0
   topvalue= 0
   types = []
+  values = { \
+    'Wordpress' : {'label': [], 'min': [], 'max': [], 'mean': [] }, \
+    'Static': {'label': [], 'min': [], 'max': [], 'mean': [] } \
+    }
   for i, label in enumerate(labels):
     group, type = label
+    types.append(type)
+    values[group]['label'].append(type)
+    values[group]['min'].append(mins[i])
+    values[group]['mean'].append(means[i])
+    values[group]['max'].append(maxes[i])
     if group == 'Static' and sep == 0:
       sep = i - 0.5
-    types.append(type)
   for i, mean in enumerate(means):
     bar = mean + maxes[i]
     if bar > topvalue:
       topvalue = bar
 
-  fig,ax = plt.subplots(1)
-  ax.set_xticks(range(len(labels)))
-  ax.set_xticklabels(types, rotation=75, ha='right')
-  ax.errorbar(np.arange(len(labels)), means, yerr=errors, fmt='.k', capsize=4)
+  ratios = [1, 1]
+  fig, axes = plt.subplots(ncols=2, sharex=False, sharey=True, gridspec_kw={'width_ratios': ratios})
 
-  ax.axvline(x=sep)
-  ax.text(0, topvalue / 2, 'Wordpress', fontsize=14, color='r')
-  ax.text(sep + 0.1, topvalue / 2, 'Static',  fontsize=14, color='r')
+  for i, group in enumerate(values):
+    data = values[group]
+    ratios[i] = len(data['label'])
+    # print("group:", i, group)
+    # print(" labels:", data['label'])
+    # print(" mins:", data['min'])
+    # print(" means:", data['mean'])
+    # print(" maxes:", data['max'])
+    errors = np.array( [ data['min'], data['max'] ] )
+    # print(" errors:", errors)
 
-  ax.set_ylabel('Energy (Joules)')
-  plt.title('Energy Usage by Scenario')
+    axes[i].set_xticks( range( len( data['label'] ) ) )
+    axes[i].set_xticklabels( data['label'], rotation=75, ha='right' )
+    axes[i].errorbar( np.arange(len(data['label'])), data['mean'], yerr=errors, c=colors[group], fmt='.', capsize=4)
+    axes[i].set_title(group)
+    axes[i].grid(axis='y', linestyle=':', color='#DDDDDD')
+
+  axes[0].set_ylabel('Energy (Joules)')
+
+  # ax.axvline(x=sep)
+  # ax.text(0, topvalue / 2, 'Wordpress', fontsize=14, color='r')
+  # ax.text(sep + 0.1, topvalue / 2, 'Static',  fontsize=14, color='r')
+
+
+  fig.suptitle('Energy Usage by Scenario', fontweight ="bold")
   fig.tight_layout()
   plt.show()
 
