@@ -5,6 +5,61 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import psycopg2 as pg
 
+dummy = False
+
+runs = {
+  ('Wordpress', 'Apache'): [
+    ('S0506', '2'),
+    ('S0511', '9'),
+    ('S0505', '3'),
+    ],
+  # 'Wordpress / Nginx': [],
+  ('Wordpress', 'Lighttpd'): [
+    ('S0506', '4')
+    ],
+  ('Static', 'Apache'): [
+    ('S0505', '4'),
+    ('S0506', '1'),
+    ('S0511', '8'),
+    ('S0512', '3'),
+    ('S0512', '8'),
+    ('S0512', '9'),
+    ],
+  ('Static', 'Nginx'): [
+    ('S0512', '10'),
+    ('S0512', '11'),
+  ],
+  ('Static', 'Lighttpd'): [
+    ('S0505', '1'),
+    ('S0506', '3'),
+    ],
+  ('Static', 'Java'): [
+    ('S0512', '16'),
+    ('S0512', '17'),
+    ('S0512', '21'),
+    ('S0517', '12'),
+  ],
+  ('Static', 'Java (*)'): [
+    ('S0512', '22'),
+    ('S0517', '13'),
+    ('S0517', '14'),
+  ],
+  ('Static', 'Node'): [
+    ('S0524', '4'),
+    ('S0524', '5'),
+  ],
+  ('Static', 'Node (*)'): [
+    ('S0524', '7'),
+    ('S0524', '8'),
+  ],
+  ('Static', 'Jetty'): [
+    ('S0517', '1'),
+    ('S0517', '2'),
+    ('S0517', '3'),
+    ('S0517', '4'),
+  ],
+}
+
 def round6(n):
   return '{:g}'.format(float('{:.6g}'.format(n)))
 
@@ -78,100 +133,78 @@ def calculate(con, scenario, session):
   extra = act_total - (bl_mean * n)
   return extra, x, y, bl_mean, act_mean, act_total, run_total
 
+def generate_dummy():
+  return [ ('Wordpress', 'Apache'), ('Wordpress', 'Lightpd'), ('Static', 'Apache'), ('Static', 'Nginx'), ('Static', 'Java') ], \
+    [ 40, 18, 1, 3, 4 ], \
+    [ 260, 223, 15, 15, 19 ], \
+    [ 50, 57, 1, 2, 6 ]
+
 def plot():
-  runs = {
-    'Wordpress / Apache': [
-      ('S0506', '2'),
-      ('S0511', '9'),
-      ('S0505', '3'),
-      ],
-    # 'Wordpress / Nginx': [],
-    'Wordpress / Lighttpd': [
-      ('S0506', '4')
-      ],
-    'Static / Apache': [
-      ('S0505', '4'),
-      ('S0506', '1'),
-      ('S0511', '8'),
-      ('S0512', '3'),
-      ('S0512', '8'),
-      ('S0512', '9'),
-      ],
-    'Static / Nginx': [
-      ('S0512', '10'),
-      ('S0512', '11'),
-    ],
-    'Static / Lighttpd': [
-      ('S0505', '1'),
-      ('S0506', '3'),
-      ],
-    'Static / Java': [
-      ('S0512', '16'),
-      ('S0512', '17'),
-      ('S0512', '21'),
-      ('S0517', '12'),
-    ],
-    'Static / Java (*)': [
-      ('S0512', '22'),
-      ('S0517', '13'),
-      ('S0517', '14'),
-    ],
-    'Static / Node': [
-      ('S0524', '4'),
-      ('S0524', '5'),
-    ],
-    'Static / Node (*)': [
-      ('S0524', '7'),
-      ('S0524', '8'),
-    ],
-    'Static / Jetty': [
-      ('S0517', '1'),
-      ('S0517', '2'),
-      ('S0517', '3'),
-      ('S0517', '4'),
-    ],
-  }
-
-  con = pg.connect(database="experiments", user="logger", password="logger", host="192.168.0.187", port="5432")
-  print("# Database opened successfully")
-
   labels = []
   mins = []
   means = []
   maxes = []
 
-  for key in runs:
-    labels.append(key)
-    sessions = runs[key]
-    print('samples for ' + key)
-    values = []
-    for run in sessions:
-      scenario, session = run
-      # print(" considering " + scenario + "/" + session)
-      usage, x, y, bl_mean, act_mean, act_total, run_total = calculate(con, scenario, session)
-      print('  (' + scenario + '/' + session + '): ' + str(round6(usage)) )
-      values.append(usage)
-    min = np.min(values)
-    max = np.max(values)
-    mean = np.mean(values)
-    print(' min: ' + str(min) + ' mean:' + str(mean) + ' max: ' + str(max))
-    mins.append(mean-min)
-    maxes.append(max-min)
-    means.append(mean)
+  if dummy:
+    labels, mins, means, maxes = generate_dummy()
+  else:
+    con = pg.connect(database="experiments", user="logger", password="logger", host="192.168.0.187", port="5432")
+    print("# Database opened successfully")
+
+    labels = []
+    mins = []
+    means = []
+    maxes = []
+    for key in runs:
+      labels.append(key)
+      sessions = runs[key]
+      print('samples for ' + key)
+      values = []
+      for run in sessions:
+        scenario, session = run
+        # print(" considering " + scenario + "/" + session)
+        usage, x, y, bl_mean, act_mean, act_total, run_total = calculate(con, scenario, session)
+        print('  (' + scenario + '/' + session + '): ' + str(round6(usage)) )
+        values.append(usage)
+      min = np.min(values)
+      max = np.max(values)
+      mean = np.mean(values)
+      print(' min: ' + str(min) + ' mean:' + str(mean) + ' max: ' + str(max))
+      mins.append(mean-min)
+      maxes.append(max-min)
+      means.append(mean)
 
   errors = np.array([mins, maxes])
-  print("combined errors:", errors)
+  # print("combined errors:", errors)
+
+  sep = 0
+  topvalue= 0
+  types = []
+  for i, label in enumerate(labels):
+    group, type = label
+    if group == 'Static' and sep == 0:
+      sep = i - 0.5
+    types.append(type)
+  for i, mean in enumerate(means):
+    bar = mean + maxes[i]
+    if bar > topvalue:
+      topvalue = bar
 
   fig,ax = plt.subplots(1)
-  ax.set_xticks(range(len(runs)))
-  ax.set_xticklabels(labels, rotation=75, ha='right')
-  ax.errorbar(np.arange(len(runs)), means, yerr=errors, fmt='.k', capsize=4)
-  # ax.plot(x, y)
+  ax.set_xticks(range(len(labels)))
+  ax.set_xticklabels(types, rotation=75, ha='right')
+  ax.errorbar(np.arange(len(labels)), means, yerr=errors, fmt='.k', capsize=4)
 
-  # ax.set_xlabel('time (s)')
+  ax.axvline(x=sep)
+  ax.text(0, topvalue / 2, 'Wordpress', fontsize=14, color='r')
+  ax.text(sep + 0.1, topvalue / 2, 'Static',  fontsize=14, color='r')
+
   ax.set_ylabel('Energy (Joules)')
-  ax.set_title('Energy Usage by Scenario')
+  plt.title('Energy Usage by Scenario')
   fig.tight_layout()
   plt.show()
 
+for arg in sys.argv:
+  if arg == '-d':
+    dummy = True
 plot()
