@@ -199,7 +199,10 @@ def plot():
       topvalue = bar
 
   ratios = [1, 1]
-  fig, axes = plt.subplots(ncols=2, sharex=False, sharey=True, gridspec_kw={'width_ratios': ratios})
+
+  fig = plt.figure()
+  gs = fig.add_gridspec(1, 2, wspace=0, width_ratios=ratios)
+  axes = gs.subplots(sharex=False, sharey=True)
 
   for i, group in enumerate(values):
     data = values[group]
@@ -212,12 +215,13 @@ def plot():
     errors = np.array( [ data['min'], data['max'] ] )
     # print(" errors:", errors)
 
-    axes[i].set_xticks( range( len( data['label'] ) ) )
-    axes[i].set_xticklabels( data['label'], rotation=75, ha='right' )
-    axes[i].errorbar( np.arange(len(data['label'])), data['mean'], yerr=errors, c=colors[group], fmt='.', capsize=4)
-    axes[i].set_title(group)
-    axes[i].grid(axis='y', linestyle=':', color='#DDDDDD')
-
+    ax = axes[i]
+    ax.set_xticks( range( len( data['label'] ) ) )
+    ax.set_xticklabels( data['label'], rotation=75, ha='right' )
+    ax.errorbar( np.arange(len(data['label'])), data['mean'], yerr=errors, c=colors[group], fmt='.', capsize=4)
+    ax.set_title(group)
+    ax.grid(axis='y', linestyle=':', color='#DDDDDD')
+    ax.label_outer()
   axes[0].set_ylabel('Energy (Joules)')
 
   # ax.axvline(x=sep)
