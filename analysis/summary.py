@@ -15,7 +15,9 @@ runs = {
     ],
   # 'Wordpress / Nginx': [],
   ('Wordpress', 'Lighttpd'): [
-    ('S0506', '4')
+    ('S0506', '4'),
+    ('S0915', '5'),
+    ('S0915', '6'),
     ],
   ('Static', 'Apache'): [
     ('S0505', '4'),
