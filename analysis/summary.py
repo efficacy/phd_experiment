@@ -13,7 +13,11 @@ runs = {
     ('S0511', '9'),
     ('S0505', '3'),
     ],
-  # 'Wordpress / Nginx': [],
+  ('Wordpress', 'Nginx'): [
+    ('S0923', '2'),
+    ('S0923', '3'),
+    ('S0923', '5'),
+  ],
   ('Wordpress', 'Lighttpd'): [
     ('S0506', '4'),
     ('S0915', '5'),
@@ -160,7 +164,7 @@ def plot():
     for key in runs:
       labels.append(key)
       sessions = runs[key]
-      print('samples for ' + key)
+      # print('samples for ' + key)
       values = []
       for run in sessions:
         scenario, session = run
@@ -187,6 +191,7 @@ def plot():
     'Static': {'label': [], 'min': [], 'max': [], 'mean': [] } \
     }
   for i, label in enumerate(labels):
+    print("label",label)
     group, type = label
     types.append(type)
     values[group]['label'].append(type)
@@ -206,9 +211,12 @@ def plot():
   gs = fig.add_gridspec(1, 2, wspace=0, width_ratios=ratios)
   axes = gs.subplots(sharex=False, sharey=True)
 
+  width = 0.4
+
   for i, group in enumerate(values):
     data = values[group]
-    ratios[i] = len(data['label'])
+    xlabels = data['label']
+    ratios[i] = len(xlabels)
     # print("group:", i, group)
     # print(" labels:", data['label'])
     # print(" mins:", data['min'])
@@ -218,12 +226,15 @@ def plot():
     # print(" errors:", errors)
 
     ax = axes[i]
-    ax.set_xticks( range( len( data['label'] ) ) )
-    ax.set_xticklabels( data['label'], rotation=75, ha='right' )
-    ax.errorbar( np.arange(len(data['label'])), data['mean'], yerr=errors, c=colors[group], fmt='.', capsize=4)
+    ax.set_xticks( range( len(xlabels) ) )
+    ax.set_xticklabels( xlabels, rotation=75, ha='right' )
+    ax.errorbar( np.arange(len(xlabels)), data['mean'], yerr=errors, c=colors[group], fmt='.', capsize=4)
     ax.set_title(group)
     ax.grid(axis='y', linestyle=':', color='#DDDDDD')
     ax.label_outer()
+    margin = (1 - width) + width / 2
+    ax.set_xlim(-margin, len(xlabels) - 1 + margin)
+
   axes[0].set_ylabel('Energy (Joules)')
 
   # ax.axvline(x=sep)
