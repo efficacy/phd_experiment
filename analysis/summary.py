@@ -180,12 +180,12 @@ def plot():
         scenario, session = run
         # print(" considering " + scenario + "/" + session)
         usage, x, y, bl_mean, act_mean, act_total, run_total = calculate(con, scenario, session)
-        print('  (' + scenario + '/' + session + '): ' + str(round6(usage)) )
+        # print('  (' + scenario + '/' + session + '): ' + str(round6(usage)) )
         values.append(usage)
       min = np.min(values)
       max = np.max(values)
       mean = np.mean(values)
-      print(' min: ' + str(min) + ' mean:' + str(mean) + ' max: ' + str(max))
+      print(str(key) + ' min: ' + str(min) + ' mean:' + str(mean) + ' max: ' + str(max))
       mins.append(mean-min)
       maxes.append(max-min)
       means.append(mean)
@@ -252,7 +252,7 @@ def plot():
   # ax.text(sep + 0.1, topvalue / 2, 'Static',  fontsize=14, color='r')
 
 
-  fig.suptitle('Energy Usage by Scenario', fontweight ="bold")
+  # fig.suptitle('Energy Usage by Scenario', fontweight ="bold")
   fig.tight_layout()
   plt.show()
 
