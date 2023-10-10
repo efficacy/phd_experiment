@@ -3,5 +3,5 @@
 # should be provided with an argument with the URL to call back
 echo $1
 target=${DUT:-192.168.0.179}
-siege --with-ssl=/usr/bin/openssl http://${DUT}/2020/11/23/what-is-sustainability/index.html -r 1000
+siege --with-ssl=/usr/bin/openssl http://${target}/2020/11/23/what-is-sustainability/index.html -r 1000
 curl -s $1
