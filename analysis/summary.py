@@ -157,20 +157,20 @@ def generate_dummy():
 
 def plot():
   labels = []
-  mins = []
+  downs = []
   means = []
-  maxes = []
+  ups = []
 
   if dummy:
-    labels, mins, means, maxes = generate_dummy()
+    labels, downs, means, ups = generate_dummy()
   else:
     con = pg.connect(database="experiments", user="logger", password="logger", host="192.168.0.187", port="5432")
     print("# Database opened successfully")
 
     labels = []
-    mins = []
+    downs = []
     means = []
-    maxes = []
+    ups = []
     for key in runs:
       labels.append(key)
       sessions = runs[key]
@@ -182,14 +182,17 @@ def plot():
         usage, x, y, bl_mean, act_mean, act_total, run_total = calculate(con, scenario, session)
         # print('  (' + scenario + '/' + session + '): ' + str(round6(usage)) )
         values.append(usage)
-      min = np.min(values)
-      max = np.max(values)
+      down = np.min(values)
+      up = np.max(values)
       mean = np.mean(values)
-      print(str(key) + ' min: ' + str(min) + ' mean:' + str(mean) + ' max: ' + str(max))
-      mins.append(mean-min)
-      maxes.append(max-min)
+      print(key[0] + ',' + key[1] + ',' + str(down) + ',' + str(mean) + ',' + str(up))
       means.append(mean)
+      downs.append(mean-down)
+      ups.append(up-mean)
 
+  print("downs:  " + str(downs))
+  print("means: " + str(means))
+  print("ups: " + str(ups))
 
   colors = { 'Wordpress' : 'red', 'Static' : 'green'}
 
@@ -201,17 +204,23 @@ def plot():
     'Static': {'label': [], 'min': [], 'max': [], 'mean': [] } \
     }
   for i, label in enumerate(labels):
-    print("label",label)
+    # print("label",label)
     group, type = label
+    down = downs[i]
+    mean = means[i]
+    up = ups[i]
     types.append(type)
+    print("\nPlotting...")
+    print(group + ',' + type + ',' + str(down) + ',' + str(mean) + ',' + str(up))
+
     values[group]['label'].append(type)
-    values[group]['min'].append(mins[i])
-    values[group]['mean'].append(means[i])
-    values[group]['max'].append(maxes[i])
+    values[group]['min'].append(down)
+    values[group]['mean'].append(mean)
+    values[group]['max'].append(up)
     if group == 'Static' and sep == 0:
       sep = i - 0.5
   for i, mean in enumerate(means):
-    bar = mean + maxes[i]
+    bar = mean + ups[i]
     if bar > topvalue:
       topvalue = bar
 
@@ -229,9 +238,9 @@ def plot():
     ratios[i] = len(xlabels)
     # print("group:", i, group)
     # print(" labels:", data['label'])
-    # print(" mins:", data['min'])
+    # print(" downs:", data['min'])
     # print(" means:", data['mean'])
-    # print(" maxes:", data['max'])
+    # print(" ups:", data['max'])
     errors = np.array( [ data['min'], data['max'] ] )
     # print(" errors:", errors)
 
