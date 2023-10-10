@@ -49,39 +49,18 @@ def calculate_active(con, scenario, session):
   # process the active data
   name = normalise_name(scenario, session)
   cur = con.cursor()
-  cur.execute("select t,p from " + name + " order by t")
+  cur.execute("select max(t) - min(t) from " + name)
   rows = cur.fetchall()
-
-  x = []
-  y = []
-
-  active = []
 
   if len(rows) == 0:
     raise RuntimeError("no data to analyse")
 
-  first = rows[0][0]
-
-  for row in rows:
-    t = row[0]
-    last = t
-    dt = (t - first).total_seconds()
-    p = row[1]
-    x.append(dt)
-    y.append(p)
-    active.append(p)
-
-  act_total = np.sum(active)
-  act_mean = np.mean(active)
-  return act_total, act_mean, len(active), x, y
+  duration = rows[0][0]
+  return duration.seconds
 
 def calculate(con, scenario, session):
   ensure_subtable(con, scenario, session)
-  bl_total, bl_mean = calculate_baseline(con, scenario, session)
-  act_total, act_mean, n, x, y = calculate_active(con, scenario, session)
-  run_total = bl_total + act_total
-  extra = act_total - (bl_mean * n)
-  return extra, x, y, bl_mean, act_mean, act_total, run_total
+  return calculate_active(con, scenario, session)
 
 def generate_dummy():
   return [ ('Wordpress', 'Apache'), ('Wordpress', 'Lightpd'), ('Static', 'Apache'), ('Static', 'Nginx'), ('Static', 'Java') ], \
@@ -112,10 +91,10 @@ def plot():
       values = []
       for run in sessions:
         scenario, session = run
-        # print(" considering " + scenario + "/" + session)
-        usage, x, y, bl_mean, act_mean, act_total, run_total = calculate(con, scenario, session)
-        # print('  (' + scenario + '/' + session + '): ' + str(round6(usage)) )
-        values.append(usage)
+        print(" considering " + scenario + "/" + session)
+        duration = calculate(con, scenario, session)
+        print('  (' + scenario + '/' + session + '): ' + str(duration) )
+        values.append(duration)
       down = np.min(values)
       up = np.max(values)
       mean = np.mean(values)
