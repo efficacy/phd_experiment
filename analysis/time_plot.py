@@ -80,12 +80,16 @@ def plot():
     con = pg.connect(database="experiments", user="logger", password="logger", host="192.168.0.187", port="5432")
     print("# Database opened successfully")
 
+    medians = {'Wordpress': [], 'Static': []}
+
     labels = []
     downs = []
     means = []
     ups = []
     for key in runs:
       labels.append(key)
+      group, type = key
+
       sessions = runs[key]
       # print('samples for ' + key)
       values = []
@@ -95,6 +99,7 @@ def plot():
         duration = calculate(con, scenario, session)
         print('  (' + scenario + '/' + session + '): ' + str(duration) )
         values.append(duration)
+        medians[group].append(duration)
       down = np.min(values)
       up = np.max(values)
       mean = np.mean(values)
@@ -103,9 +108,12 @@ def plot():
       downs.append(mean-down)
       ups.append(up-mean)
 
-  print("downs:  " + str(downs))
-  print("means: " + str(means))
-  print("ups: " + str(ups))
+  # print("downs:  " + str(downs))
+  # print("means: " + str(means))
+  # print("ups: " + str(ups))
+
+  print("Wordpress median: " + str(int(np.median(medians['Wordpress']))))
+  print("Static median: " + str(int(np.median(medians['Static']))))
 
   colors = { 'Wordpress' : 'red', 'Static' : 'green'}
 
@@ -123,8 +131,8 @@ def plot():
     mean = means[i]
     up = ups[i]
     types.append(type)
-    print("\nPlotting...")
-    print(group + ',' + type + ',' + str(down) + ',' + str(mean) + ',' + str(up))
+    # print("\nPlotting...")
+    # print(group + ',' + type + ',' + str(down) + ',' + str(mean) + ',' + str(up))
 
     values[group]['label'].append(type)
     values[group]['min'].append(down)
@@ -167,7 +175,7 @@ def plot():
     margin = (1 - width) + width / 2
     ax.set_xlim(-margin, len(xlabels) - 1 + margin)
 
-  axes[0].set_ylabel('Energy (Joules)')
+  axes[0].set_ylabel('Time (Seconds)')
 
   # ax.axvline(x=sep)
   # ax.text(0, topvalue / 2, 'Wordpress', fontsize=14, color='r')
