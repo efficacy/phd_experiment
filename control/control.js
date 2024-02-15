@@ -243,7 +243,7 @@ app.get('/run_complete', (req, res) => {
     let message = err ? `with err ${err}` : `OK`
     console.log(`session ${scenario}/${session} terminated ${message}`)
     res.setHeader('Content-Type', 'text/plain')
-    res.send('OK')
+    res.send('OK Run Complete\n')
   })
 })
 
