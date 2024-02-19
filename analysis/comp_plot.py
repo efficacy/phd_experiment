@@ -68,15 +68,15 @@ def calculate(con, scenario, session):
 def round6(n):
   return '{:g}'.format(float('{:.6g}'.format(n)))
 
-def plot(values):
-  print("plotting", values)
+def plot(values, ylabel='Energy (Joules)'):
+  # print("plotting", values)
   labels = []
   downs = []
   means = []
   ups = []
 
   for i, run in enumerate(values):
-    print("examining run", run)
+    # print("examining run", run)
     labels.append(run['engine'])
     means.append(run['mean'])
     downs.append(run['mean'] - run['min'])
@@ -101,7 +101,7 @@ def plot(values):
   margin = (1 - width) + width / 2
   ax.set_xlim(-margin, len(labels) - 1 + margin)
 
-  ax.set_ylabel('Energy (Joules)')
+  ax.set_ylabel(ylabel)
 
   # ax.axvline(x=sep)
   # ax.text(0, topvalue / 2, 'Wordpress', fontsize=14, color='r')
@@ -119,29 +119,64 @@ runs = runs.data()
 con = pg.connect(database="experiments", user="logger", password="logger", host="192.168.0.187", port="5432")
 print("# Database opened successfully")
 
-values = []
+energy_values = []
+duration_values = []
+ratio_values = []
 
 for engine in runs:
   ids = runs[engine]
   # print(f'engine: {engine}')
   n = 0
-  total = 0
-  min = 10000
-  max = -10000
+
+  total_energy = 0
+  lowest_energy = 10000
+  highest_energy = -10000
+
+  total_duration = 0
+  lowest_duration = 10000
+  highest_duration = -10000
+
+  total_ratio = 0
+  lowest_ratio = 10000
+  highest_ratio = -10000
+
   for id in ids:
     scenario, session = id
     # print(f'session: {scenario}, run {session}')
     usage, x, y, bl_mean, act_mean, act_total, run_total = calculate(con, scenario, session)
-    # print('  (' + scenario + '/' + session + '): ' + str(round6(usage)) )
-    total += usage
+    print(f'({scenario}/{session}) usage={round6(usage)} time={max(x)}')
+    duration = max(x)
+    ratio = usage / duration
+
+    total_energy += usage
+    total_duration += duration
+    total_ratio += ratio
     n += 1
-    if (usage < min):
-      min = usage
-    if (usage > max):
-      max = usage
 
-  mean = total / n
-  print(f'engine: {engine} mean: {round6(mean)} min: {round6(min)} max: {round6(max)}')
-  values.append({'engine': engine, 'mean': mean, 'min': min, 'max': max})
+    if (usage < lowest_energy):
+      lowest_energy = usage
+    if (usage > highest_energy):
+      highest_energy = usage
 
-plot(values)
+    if (duration < lowest_duration):
+      lowest_duration = duration
+    if (duration > highest_duration):
+      highest_duration = duration
+
+    if (ratio < lowest_ratio):
+      lowest_ratio = ratio
+    if (ratio > highest_ratio):
+      highest_ratio = ratio
+
+  mean_energy = total_energy / n
+  mean_duration = total_duration / n
+  mean_ratio = total_ratio / n
+  # print(f'engine: {engine} mean: {round6(mean_energy)} min: {round6(lowest_energy)} max: {round6(highest_energy)}')
+  energy_values.append({'engine': engine, 'mean': mean_energy, 'min': lowest_energy, 'max': highest_energy})
+  print(f'engine: {engine} mean: {round6(mean_duration)} min: {round6(lowest_duration)} max: {round6(highest_duration)}')
+  duration_values.append({'engine': engine, 'mean': mean_duration, 'min': lowest_duration, 'max': highest_duration})
+  ratio_values.append({'engine': engine, 'mean': mean_ratio, 'min': lowest_ratio, 'max': highest_ratio})
+
+# plot(energy_values)
+# plot(duration_values)
+plot(ratio_values, ylabel='Power (Watts)')
