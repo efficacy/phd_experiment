@@ -178,5 +178,5 @@ for engine in runs:
   ratio_values.append({'engine': engine, 'mean': mean_ratio, 'min': lowest_ratio, 'max': highest_ratio})
 
 # plot(energy_values)
-# plot(duration_values)
+# plot(duration_values, ylabel='Time (Seconds)')
 plot(ratio_values, ylabel='Power (Watts)')
