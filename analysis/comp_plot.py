@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import psycopg2 as pg
 
-import comp_runs as runs
+# import comp_runs as runs
+import page_runs as runs
 
 def normalise_name(scenario, session):
   return scenario + "_" + session
