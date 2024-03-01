@@ -114,7 +114,6 @@ def plot(values, ylabel='Energy (Joules)'):
   plt.show()
 
 
-dummy = False
 runs = runs.data()
 
 con = pg.connect(database="experiments", user="logger", password="logger", host="192.168.0.187", port="5432")
@@ -145,7 +144,7 @@ for engine in runs:
     scenario, session = id
     # print(f'session: {scenario}, run {session}')
     usage, x, y, bl_mean, act_mean, act_total, run_total = calculate(con, scenario, session)
-    print(f'({scenario}/{session}) usage={round6(usage)} time={max(x)}')
+    # print(f'({scenario}/{session}) usage={round6(usage)} time={max(x)}')
     duration = max(x)
     ratio = usage / duration
 
@@ -174,10 +173,24 @@ for engine in runs:
   mean_ratio = total_ratio / n
   # print(f'engine: {engine} mean: {round6(mean_energy)} min: {round6(lowest_energy)} max: {round6(highest_energy)}')
   energy_values.append({'engine': engine, 'mean': mean_energy, 'min': lowest_energy, 'max': highest_energy})
-  print(f'engine: {engine} mean: {round6(mean_duration)} min: {round6(lowest_duration)} max: {round6(highest_duration)}')
+  # print(f'engine: {engine} mean: {round6(mean_duration)} min: {round6(lowest_duration)} max: {round6(highest_duration)}')
   duration_values.append({'engine': engine, 'mean': mean_duration, 'min': lowest_duration, 'max': highest_duration})
   ratio_values.append({'engine': engine, 'mean': mean_ratio, 'min': lowest_ratio, 'max': highest_ratio})
 
-# plot(energy_values)
-# plot(duration_values, ylabel='Time (Seconds)')
-plot(ratio_values, ylabel='Power (Watts)')
+good_arg = False
+
+if len(sys.argv) > 1:
+  print('args:' + str(sys.argv))
+  graph = sys.argv[1]
+  if graph == 'e':
+    plot(energy_values)
+    good_arg = True
+  elif graph == 't':
+    plot(duration_values, ylabel='Time (Seconds)')
+    good_arg = True
+  elif graph == 'p':
+    plot(ratio_values, ylabel='Power (Watts)')
+    good_arg = True
+
+if not good_arg:
+  print("please specify a single-letter argument: e - energy comparison, t - time comparison, p - power comparison")
